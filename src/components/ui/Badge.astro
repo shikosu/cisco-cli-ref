@@ -1,0 +1,138 @@
+---
+/**
+ * Badge — indicateur visuel compact
+ *
+ * type 'mode'       → couleur --color-mode-* (user, privileged, config, config-if, config-line, config-router, config-vlan)
+ * type 'difficulty' → couleur --color-diff-* (debutant, intermediaire, avance)
+ * type 'device'     → fond neutre (switch, router)
+ * type sémantique   → info | warning | success | danger
+ */
+interface Props {
+  type: 'mode' | 'difficulty' | 'device' | 'info' | 'warning' | 'success' | 'danger';
+  value?: string;
+}
+
+const { type, value = '' } = Astro.props;
+
+/* Mapping mode CLI → token CSS (les noms CSS abrègent "privileged" en "priv", etc.) */
+const modeColorVar: Record<string, string> = {
+  'user':          '--color-mode-user',
+  'privileged':    '--color-mode-priv',
+  'config':        '--color-mode-config',
+  'config-if':     '--color-mode-config-if',
+  'config-line':   '--color-mode-config-line',
+  'config-router': '--color-mode-config-rtr',
+  'config-vlan':   '--color-mode-config-vlan',
+};
+
+const diffColorVar: Record<string, string> = {
+  'debutant':      '--color-diff-debutant',
+  'intermediaire': '--color-diff-intermed',
+  'avance':        '--color-diff-avance',
+};
+
+/* Labels affichés dans le badge */
+const modeLabels: Record<string, string> = {
+  'user':          'User',
+  'privileged':    'Privileged',
+  'config':        'Config',
+  'config-if':     'Config-if',
+  'config-line':   'Config-line',
+  'config-router': 'Config-router',
+  'config-vlan':   'Config-vlan',
+};
+
+const diffLabels: Record<string, string> = {
+  'debutant':      'Débutant',
+  'intermediaire': 'Intermédiaire',
+  'avance':        'Avancé',
+};
+
+const deviceLabels: Record<string, string> = {
+  'switch': 'Switch',
+  'router': 'Routeur',
+};
+
+/* Construction du style inline et du label */
+let label: string = value;
+let inlineStyle = '';
+
+if (type === 'mode') {
+  const colorVar = modeColorVar[value] ?? '--color-text-muted';
+  label = modeLabels[value] ?? value;
+  inlineStyle = [
+    `color: var(${colorVar})`,
+    `background-color: color-mix(in srgb, var(${colorVar}) 12%, transparent)`,
+    `border-color: color-mix(in srgb, var(${colorVar}) 30%, transparent)`,
+  ].join('; ');
+
+} else if (type === 'difficulty') {
+  const colorVar = diffColorVar[value] ?? '--color-text-muted';
+  label = diffLabels[value] ?? value;
+  inlineStyle = [
+    `color: var(${colorVar})`,
+    `background-color: color-mix(in srgb, var(${colorVar}) 12%, transparent)`,
+    `border-color: color-mix(in srgb, var(${colorVar}) 30%, transparent)`,
+  ].join('; ');
+
+} else if (type === 'device') {
+  label = deviceLabels[value] ?? value;
+  inlineStyle = [
+    'color: var(--color-text-muted)',
+    'background-color: var(--color-bg-muted)',
+    'border-color: var(--color-border)',
+  ].join('; ');
+
+} else if (type === 'info') {
+  label = value || 'Info';
+  inlineStyle = [
+    'color: var(--color-info)',
+    'background-color: var(--color-info-bg)',
+    'border-color: color-mix(in srgb, var(--color-info) 30%, transparent)',
+  ].join('; ');
+
+} else if (type === 'warning') {
+  label = value || 'Attention';
+  inlineStyle = [
+    'color: var(--color-warning)',
+    'background-color: var(--color-warning-bg)',
+    'border-color: color-mix(in srgb, var(--color-warning) 30%, transparent)',
+  ].join('; ');
+
+} else if (type === 'success') {
+  label = value || 'OK';
+  inlineStyle = [
+    'color: var(--color-success)',
+    'background-color: var(--color-success-bg)',
+    'border-color: color-mix(in srgb, var(--color-success) 30%, transparent)',
+  ].join('; ');
+
+} else if (type === 'danger') {
+  label = value || 'Danger';
+  inlineStyle = [
+    'color: var(--color-danger)',
+    'background-color: var(--color-danger-bg)',
+    'border-color: color-mix(in srgb, var(--color-danger) 30%, transparent)',
+  ].join('; ');
+}
+---
+
+<span class="badge" style={inlineStyle}>{label}</span>
+
+<style>
+.badge {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  white-space: nowrap;
+  line-height: 1.6;
+  vertical-align: middle;
+}
+</style>

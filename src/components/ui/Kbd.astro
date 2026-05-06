@@ -1,0 +1,31 @@
+---
+/**
+ * Kbd — touche clavier stylée
+ *
+ * Usage : <Kbd>Ctrl</Kbd> + <Kbd>K</Kbd>
+ * Le contenu (nom de la touche) est passé via le slot.
+ */
+---
+
+<kbd class="kbd"><slot /></kbd>
+
+<style>
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  line-height: 1;
+  color: var(--color-text-muted);
+  background-color: var(--color-bg-muted);
+  border: 1px solid var(--color-border-strong);
+  border-bottom-width: 2px; /* relief clavier */
+  border-radius: var(--radius-sm);
+  padding: 2px 6px;
+  white-space: nowrap;
+  vertical-align: middle;
+  box-shadow: 0 1px 0 var(--color-border-strong);
+}
+</style>

@@ -1,0 +1,96 @@
+---
+/**
+ * CliPrompt ⭐ — composant signature
+ *
+ * Reproduit fidèlement le prompt d'un terminal Cisco IOS avec couleur par mode.
+ * Utilisable inline dans le texte MDX : "Depuis <CliPrompt mode="config" />, tape..."
+ *
+ * Rendu attendu :
+ *   Switch>                       (user — gris ardoise)
+ *   Switch#                       (privileged — Cisco Blue)
+ *   Switch(config)#               (config — violet)
+ *   Switch(config-if)#            (config-if — vert)
+ *   Switch(config-if-Fa0/1)#      (config-if avec ifname — vert)
+ *   Switch(config-line)#          (config-line — rose)
+ *   Router(config-router)#        (config-router — rouge)
+ *   Switch(config-vlan)#          (config-vlan — orange)
+ */
+interface Props {
+  hostname?: string;
+  mode: 'user' | 'privileged' | 'config' | 'config-if' | 'config-line' | 'config-router' | 'config-vlan';
+  ifname?: string;
+}
+
+const { mode, ifname } = Astro.props;
+
+/* Hostname par défaut : Router pour config-router, Switch pour tous les autres */
+const defaultHostname = mode === 'config-router' ? 'Router' : 'Switch';
+const hostname = Astro.props.hostname ?? defaultHostname;
+
+/* Token CSS de couleur selon le mode */
+const colorVarMap: Record<string, string> = {
+  'user':          '--color-mode-user',
+  'privileged':    '--color-mode-priv',
+  'config':        '--color-mode-config',
+  'config-if':     '--color-mode-config-if',
+  'config-line':   '--color-mode-config-line',
+  'config-router': '--color-mode-config-rtr',
+  'config-vlan':   '--color-mode-config-vlan',
+};
+
+const colorVar = colorVarMap[mode] ?? '--color-text-muted';
+
+/* Partie entre parenthèses selon le mode */
+const parenMap: Record<string, string> = {
+  'config':        '(config)',
+  'config-if':     ifname ? `(config-if-${ifname})` : '(config-if)',
+  'config-line':   '(config-line)',
+  'config-router': '(config-router)',
+  'config-vlan':   '(config-vlan)',
+};
+const parenPart = parenMap[mode] ?? '';
+
+/* Caractère de fin de prompt */
+const promptChar = mode === 'user' ? '>' : '#';
+
+/* Échapper les caractères HTML pour une insertion sécurisée via set:html */
+const esc = (s: string) =>
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+/* Assemblage HTML : pas d'espace entre les spans pour un rendu monospace exact */
+const innerHtml =
+  `<span class="cli-host">${esc(hostname)}</span>` +
+  (parenPart ? `<span class="cli-paren">${esc(parenPart)}</span>` : '') +
+  `<strong class="cli-char">${esc(promptChar)}</strong>`;
+---
+
+<code
+  class="cli-prompt"
+  style={`--prompt-color: var(${colorVar});`}
+  set:html={innerHtml}
+/>
+
+<style>
+.cli-prompt {
+  display: inline;
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  color: var(--prompt-color);
+  white-space: nowrap;
+  vertical-align: baseline;
+  /* Pas de fond ni de bordure — le prompt s'intègre dans la prose */
+  background: none;
+  padding: 0;
+  border: none;
+}
+
+.cli-prompt .cli-host,
+.cli-prompt .cli-paren {
+  opacity: 0.85;
+}
+
+.cli-prompt .cli-char {
+  font-weight: 700;
+  opacity: 1;
+}
+</style>

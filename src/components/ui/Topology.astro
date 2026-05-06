@@ -1,0 +1,44 @@
+---
+/**
+ * Topology — diagramme ASCII stylé pour représenter les topologies réseau
+ *
+ * Le contenu (art ASCII) est passé via le slot.
+ * Fond légèrement teinté, bordure pointillée, police mono.
+ */
+---
+
+<figure class="topology" aria-label="Diagramme de topologie réseau">
+  <pre class="topology-pre"><slot /></pre>
+</figure>
+
+<style>
+.topology {
+  margin: 0 0 var(--space-6) 0;
+  padding: 0;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-bg-subtle);
+  overflow-x: auto;
+}
+
+.topology-pre {
+  margin: 0;
+  padding: var(--space-6);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  line-height: var(--leading-snug);
+  color: var(--color-text-muted);
+  white-space: pre;
+  text-align: center;
+  background: none;
+  border: none;
+}
+
+/* Scrollbar fine si contenu large */
+.topology::-webkit-scrollbar { height: 4px; }
+.topology::-webkit-scrollbar-track { background: transparent; }
+.topology::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: 2px;
+}
+</style>

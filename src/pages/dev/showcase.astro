@@ -1,0 +1,423 @@
+---
+/**
+ * Page showcase — affiche tous les composants UI en mode clair ET sombre.
+ * À supprimer ou rediriger avant la mise en production.
+ */
+import '../../styles/global.css';
+import Badge       from '../../components/ui/Badge.astro';
+import CliPrompt   from '../../components/ui/CliPrompt.astro';
+import CodeBlock   from '../../components/ui/CodeBlock.astro';
+import Callout     from '../../components/ui/Callout.astro';
+import Topology    from '../../components/ui/Topology.astro';
+import Kbd         from '../../components/ui/Kbd.astro';
+import ThemeToggle from '../../components/ui/ThemeToggle.astro';
+---
+
+<!doctype html>
+<html lang="fr" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Showcase — Cisco CLI Reference</title>
+    <meta name="robots" content="noindex, nofollow" />
+
+    {/* ---- Script anti-flash : lit localStorage AVANT le premier rendu ---- */}
+    <script is:inline>
+      (function () {
+        try {
+          var stored = localStorage.getItem('theme');
+          if (stored === 'dark' || stored === 'light') {
+            document.documentElement.dataset.theme = stored;
+          } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.dataset.theme = 'dark';
+          }
+        } catch (_) { /* localStorage indisponible */ }
+      })();
+    </script>
+  </head>
+
+  <body>
+    {/* Barre de navigation du showcase */}
+    <nav class="sc-nav">
+      <span class="sc-nav-title">🎨 Showcase — Design system</span>
+      <div class="sc-nav-actions">
+        <ThemeToggle />
+      </div>
+    </nav>
+
+    <main class="sc-main">
+
+      {/* ================================================================
+          SECTION : Typographie & tokens
+          ================================================================ */}
+      <section class="sc-section">
+        <h2 class="sc-heading">Typographie</h2>
+        <div class="sc-card">
+          <p style="font-size: var(--text-5xl); font-weight: 700; letter-spacing: var(--tracking-tight); line-height: var(--leading-tight);">Hero — IBM Plex Sans</p>
+          <p style="font-size: var(--text-4xl); font-weight: 700; letter-spacing: var(--tracking-tight);">Titre H1</p>
+          <p style="font-size: var(--text-2xl); font-weight: 600; letter-spacing: var(--tracking-tight);">Titre H2</p>
+          <p style="font-size: var(--text-xl); font-weight: 600;">Titre H3</p>
+          <p style="font-size: var(--text-base); line-height: var(--leading-relaxed);">Corps de texte — Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+          <p style="font-size: var(--text-sm); color: var(--color-text-muted);">Meta / label — Catégorie · 5 min de lecture</p>
+          <p style="font-family: var(--font-mono); font-size: var(--text-sm);">Code monospace — Switch(config)# hostname SW-Lattes-01</p>
+        </div>
+      </section>
+
+      {/* ================================================================
+          SECTION : Couleurs
+          ================================================================ */}
+      <section class="sc-section">
+        <h2 class="sc-heading">Palette de couleurs</h2>
+        <div class="sc-color-grid">
+          <div class="sc-swatch" style="background: var(--color-bg); border: 1px solid var(--color-border);">bg</div>
+          <div class="sc-swatch" style="background: var(--color-bg-subtle);">bg-subtle</div>
+          <div class="sc-swatch" style="background: var(--color-bg-muted);">bg-muted</div>
+          <div class="sc-swatch" style="background: var(--color-accent); color: #fff;">accent</div>
+          <div class="sc-swatch" style="background: var(--color-mode-user); color: #fff;">mode-user</div>
+          <div class="sc-swatch" style="background: var(--color-mode-priv); color: #fff;">mode-priv</div>
+          <div class="sc-swatch" style="background: var(--color-mode-config); color: #fff;">mode-config</div>
+          <div class="sc-swatch" style="background: var(--color-mode-config-if); color: #fff;">config-if</div>
+          <div class="sc-swatch" style="background: var(--color-mode-config-line); color: #fff;">config-line</div>
+          <div class="sc-swatch" style="background: var(--color-mode-config-rtr); color: #fff;">config-rtr</div>
+          <div class="sc-swatch" style="background: var(--color-mode-config-vlan); color: #fff;">config-vlan</div>
+          <div class="sc-swatch" style="background: var(--color-success); color: #fff;">success</div>
+          <div class="sc-swatch" style="background: var(--color-warning); color: #fff;">warning</div>
+          <div class="sc-swatch" style="background: var(--color-danger); color: #fff;">danger</div>
+          <div class="sc-swatch" style="background: var(--color-info); color: #fff;">info</div>
+        </div>
+      </section>
+
+      {/* ================================================================
+          SECTION : Badge
+          ================================================================ */}
+      <section class="sc-section">
+        <h2 class="sc-heading">Badge</h2>
+        <div class="sc-card">
+          <p class="sc-label">Modes CLI</p>
+          <div class="sc-row">
+            <Badge type="mode" value="user" />
+            <Badge type="mode" value="privileged" />
+            <Badge type="mode" value="config" />
+            <Badge type="mode" value="config-if" />
+            <Badge type="mode" value="config-line" />
+            <Badge type="mode" value="config-router" />
+            <Badge type="mode" value="config-vlan" />
+          </div>
+
+          <p class="sc-label">Difficulté</p>
+          <div class="sc-row">
+            <Badge type="difficulty" value="debutant" />
+            <Badge type="difficulty" value="intermediaire" />
+            <Badge type="difficulty" value="avance" />
+          </div>
+
+          <p class="sc-label">Équipement</p>
+          <div class="sc-row">
+            <Badge type="device" value="switch" />
+            <Badge type="device" value="router" />
+          </div>
+
+          <p class="sc-label">Sémantiques</p>
+          <div class="sc-row">
+            <Badge type="info" />
+            <Badge type="warning" />
+            <Badge type="success" />
+            <Badge type="danger" />
+          </div>
+        </div>
+      </section>
+
+      {/* ================================================================
+          SECTION : CliPrompt ⭐
+          ================================================================ */}
+      <section class="sc-section">
+        <h2 class="sc-heading">CliPrompt <span style="color: var(--color-accent);">⭐</span></h2>
+        <div class="sc-card">
+          <p class="sc-label">Tous les modes (usage inline dans la prose)</p>
+          <div class="sc-prompts">
+            <div class="sc-prompt-row">
+              <CliPrompt mode="user" /> <span class="sc-prompt-desc">— User mode (gris ardoise)</span>
+            </div>
+            <div class="sc-prompt-row">
+              <CliPrompt mode="privileged" /> <span class="sc-prompt-desc">— Privileged EXEC (Cisco Blue)</span>
+            </div>
+            <div class="sc-prompt-row">
+              <CliPrompt mode="config" /> <span class="sc-prompt-desc">— Global config (violet)</span>
+            </div>
+            <div class="sc-prompt-row">
+              <CliPrompt mode="config-if" /> <span class="sc-prompt-desc">— Interface config (vert)</span>
+            </div>
+            <div class="sc-prompt-row">
+              <CliPrompt mode="config-if" ifname="Fa0/1" /> <span class="sc-prompt-desc">— Interface config avec ifname</span>
+            </div>
+            <div class="sc-prompt-row">
+              <CliPrompt mode="config-line" /> <span class="sc-prompt-desc">— Line config (rose)</span>
+            </div>
+            <div class="sc-prompt-row">
+              <CliPrompt mode="config-router" /> <span class="sc-prompt-desc">— Router config (rouge)</span>
+            </div>
+            <div class="sc-prompt-row">
+              <CliPrompt mode="config-vlan" /> <span class="sc-prompt-desc">— VLAN config (orange)</span>
+            </div>
+          </div>
+
+          <p class="sc-label" style="margin-top: var(--space-6);">Usage inline dans la prose</p>
+          <p class="prose-example">
+            Pour passer en mode privilégié, tape <code>enable</code> depuis <CliPrompt mode="user" />.
+            Une fois en mode <CliPrompt mode="privileged" />, tape <code>configure terminal</code>.
+          </p>
+        </div>
+      </section>
+
+      {/* ================================================================
+          SECTION : CodeBlock
+          ================================================================ */}
+      <section class="sc-section">
+        <h2 class="sc-heading">CodeBlock</h2>
+
+        <CodeBlock lang="cisco" title="Configuration SSH sur SW-Lattes-01">
+{`Switch> enable
+Switch# configure terminal
+Switch(config)# ip domain-name lycee-champollion.fr
+Switch(config)# crypto key generate rsa
+! Choisir la taille du modulus
+How many bits in the modulus [512]: 2048
+Switch(config)# username admin privilege 15 secret M0nMdP!
+Switch(config)# line vty 0 4
+Switch(config-line)# login local
+Switch(config-line)# transport input ssh
+Switch(config-line)# end
+Switch# write memory`}
+        </CodeBlock>
+
+        <CodeBlock lang="cisco" showLineNumbers={true} highlight={[3, 7]} title="Avec numéros de ligne + highlight">
+{`Switch> enable
+Switch# configure terminal
+Switch(config)# hostname SW-Lattes-01
+SW-Lattes-01(config)# vlan 10
+SW-Lattes-01(config-vlan)# name Eleves
+SW-Lattes-01(config-vlan)# exit
+SW-Lattes-01(config)# vlan 20
+SW-Lattes-01(config-vlan)# name Profs`}
+        </CodeBlock>
+
+        <CodeBlock lang="bash">
+{`ssh admin@192.168.1.1
+ping 10.0.0.1
+traceroute 8.8.8.8`}
+        </CodeBlock>
+      </section>
+
+      {/* ================================================================
+          SECTION : Callout
+          ================================================================ */}
+      <section class="sc-section">
+        <h2 class="sc-heading">Callout</h2>
+        <div class="sc-card">
+          <Callout type="note" title="Note personnalisée">
+            Ceci est une note informative. Elle peut contenir du <code>code inline</code> et des liens.
+          </Callout>
+          <Callout type="tip">
+            Conseil pratique : utilise <code>conf t</code> comme raccourci de <code>configure terminal</code>.
+          </Callout>
+          <Callout type="warning" title="Attention à la casse">
+            <code>hostname Switch</code> et <code>hostname switch</code> produisent deux prompts différents.
+          </Callout>
+          <Callout type="danger">
+            <code>erase startup-config</code> efface la configuration permanente. Sans sauvegarde préalable, toute la config est perdue.
+          </Callout>
+        </div>
+      </section>
+
+      {/* ================================================================
+          SECTION : Topology
+          ================================================================ */}
+      <section class="sc-section">
+        <h2 class="sc-heading">Topology</h2>
+        <Topology>
+{`   PC1 ──────┐
+             │
+             ▼
+       ┌──────────┐    Trunk     ┌──────────┐
+       │   SW1    │ ◄══════════► │   SW2    │
+       │  VLAN10  │              │  VLAN10  │
+       └──────────┘              └──────────┘
+                                       ▲
+                                       │
+                                       └────── PC2`}
+        </Topology>
+      </section>
+
+      {/* ================================================================
+          SECTION : Kbd
+          ================================================================ */}
+      <section class="sc-section">
+        <h2 class="sc-heading">Kbd</h2>
+        <div class="sc-card">
+          <p>Ouvrir la palette de recherche : <Kbd>Ctrl</Kbd> + <Kbd>K</Kbd></p>
+          <p>Fermer : <Kbd>Esc</Kbd></p>
+          <p>Naviguer : <Kbd>↑</Kbd> <Kbd>↓</Kbd> &nbsp; Ouvrir : <Kbd>↵</Kbd></p>
+        </div>
+      </section>
+
+      {/* ================================================================
+          SECTION : Prose (styles MDX)
+          ================================================================ */}
+      <section class="sc-section">
+        <h2 class="sc-heading">Prose (styles MDX)</h2>
+        <div class="sc-card prose">
+          <h2>Titre H2 dans la prose</h2>
+          <p>Corps de texte avec un lien <a href="#">vers une fiche</a> et du <code>code inline</code>. La ligne de texte doit rester lisible à 760px de large maximum.</p>
+          <h3>Titre H3</h3>
+          <ul>
+            <li>Premier élément de liste</li>
+            <li>Deuxième élément avec <strong>texte en gras</strong></li>
+            <li>Troisième élément avec <em>italique</em></li>
+          </ul>
+          <blockquote>
+            <p>Citation importante — le VLAN 1 est le VLAN par défaut, présent partout.</p>
+          </blockquote>
+          <table>
+            <thead>
+              <tr><th>Commande</th><th>Mode</th><th>Effet</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>enable</code></td><td>User</td><td>Passe en mode privilégié</td></tr>
+              <tr><td><code>configure terminal</code></td><td>Privileged</td><td>Passe en config global</td></tr>
+              <tr><td><code>end</code></td><td>Tous</td><td>Retourne en privileged EXEC</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+  </body>
+</html>
+
+<style>
+/* ---- Layout showcase ---- */
+.sc-nav {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-6);
+  height: var(--layout-header-h);
+  background-color: var(--color-bg-elevated);
+  border-bottom: 1px solid var(--color-border);
+  z-index: var(--z-header);
+}
+
+.sc-nav-title {
+  font-weight: 600;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.sc-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.sc-main {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-6) var(--space-16);
+}
+
+/* ---- Sections ---- */
+.sc-section {
+  margin-bottom: var(--space-12);
+}
+
+.sc-heading {
+  font-size: var(--text-xl);
+  font-weight: 600;
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text);
+  margin: 0 0 var(--space-4) 0;
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.sc-card {
+  background-color: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-6);
+}
+
+.sc-label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--color-text-subtle);
+  margin: 0 0 var(--space-2) 0;
+}
+
+.sc-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+/* ---- Palette couleurs ---- */
+.sc-color-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: var(--space-2);
+}
+
+.sc-swatch {
+  padding: var(--space-4) var(--space-2);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-align: center;
+  font-family: var(--font-mono);
+}
+
+/* ---- CliPrompt section ---- */
+.sc-prompts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.sc-prompt-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+.sc-prompt-desc {
+  font-family: var(--font-sans);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.prose-example {
+  font-size: var(--text-base);
+  line-height: var(--leading-relaxed);
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+}
+
+.prose-example code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background-color: var(--color-bg-muted);
+  padding: 0.1em 0.35em;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+}
+</style>

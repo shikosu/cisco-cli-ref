@@ -1,0 +1,127 @@
+---
+/**
+ * Callout — bloc d'aide contextuel avec icône et bordure colorée
+ *
+ * Variants :
+ *   note    → bleu info (icône Info)
+ *   tip     → vert succès (icône Lightbulb)
+ *   warning → orange attention (icône TriangleAlert)
+ *   danger  → rouge critique (icône OctagonAlert) — commandes destructrices
+ */
+import Info         from '@lucide/astro/icons/info';
+import Lightbulb    from '@lucide/astro/icons/lightbulb';
+import TriangleAlert  from '@lucide/astro/icons/triangle-alert';
+import OctagonAlert   from '@lucide/astro/icons/octagon-alert';
+
+interface Props {
+  type: 'note' | 'tip' | 'warning' | 'danger';
+  title?: string;
+}
+
+const { type, title } = Astro.props;
+
+/* Configuration par variant */
+const config = {
+  note: {
+    icon: Info,
+    colorVar: '--color-info',
+    bgVar:    '--color-info-bg',
+    defaultTitle: 'Note',
+  },
+  tip: {
+    icon: Lightbulb,
+    colorVar: '--color-success',
+    bgVar:    '--color-success-bg',
+    defaultTitle: 'Conseil',
+  },
+  warning: {
+    icon: TriangleAlert,
+    colorVar: '--color-warning',
+    bgVar:    '--color-warning-bg',
+    defaultTitle: 'Attention',
+  },
+  danger: {
+    icon: OctagonAlert,
+    colorVar: '--color-danger',
+    bgVar:    '--color-danger-bg',
+    defaultTitle: 'Danger',
+  },
+} as const;
+
+const { icon: Icon, colorVar, bgVar, defaultTitle } = config[type] ?? config.note;
+const displayTitle = title ?? defaultTitle;
+---
+
+<aside
+  class="callout"
+  style={`--callout-color: var(${colorVar}); --callout-bg: var(${bgVar});`}
+  data-type={type}
+>
+  <div class="callout-icon" aria-hidden="true">
+    <Icon size={20} />
+  </div>
+  <div class="callout-body">
+    {displayTitle && <p class="callout-title">{displayTitle}</p>}
+    <div class="callout-content">
+      <slot />
+    </div>
+  </div>
+</aside>
+
+<style>
+.callout {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background-color: var(--callout-bg);
+  border-left: 3px solid var(--callout-color);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  margin-bottom: var(--space-6);
+}
+
+.callout-icon {
+  display: flex;
+  align-items: flex-start;
+  flex-shrink: 0;
+  color: var(--callout-color);
+  padding-top: 2px; /* Alignement optique avec le texte */
+}
+
+.callout-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.callout-title {
+  font-weight: 600;
+  font-size: var(--text-sm);
+  color: var(--callout-color);
+  margin: 0 0 var(--space-1) 0;
+  line-height: var(--leading-snug);
+}
+
+.callout-content {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  line-height: var(--leading-relaxed);
+}
+
+.callout-content :global(p) {
+  margin: 0;
+}
+
+.callout-content :global(p + p) {
+  margin-top: var(--space-2);
+}
+
+/* Inline code dans les callouts */
+.callout-content :global(code) {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  font-weight: 500;
+  background-color: color-mix(in srgb, var(--callout-color) 12%, transparent);
+  color: var(--callout-color);
+  padding: 0.1em 0.35em;
+  border-radius: var(--radius-sm);
+}
+</style>
