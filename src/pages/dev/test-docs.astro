@@ -1,0 +1,97 @@
+---
+/**
+ * Page de test factice — valide le DocsLayout 3 colonnes.
+ * À supprimer avant la mise en production.
+ */
+import DocsLayout from '../../layouts/DocsLayout.astro';
+
+const headings = [
+  { depth: 2, slug: 'en-bref',          text: 'En bref' },
+  { depth: 2, slug: 'syntaxe',          text: 'Syntaxe' },
+  { depth: 2, slug: 'exemple-minimal',  text: 'Exemple minimal' },
+  { depth: 3, slug: 'detail-option-a',  text: 'Détail option A' },
+  { depth: 2, slug: 'etapes-detaillees',text: 'Étapes détaillées' },
+  { depth: 2, slug: 'verification',     text: 'Vérification' },
+  { depth: 2, slug: 'pieges-frequents', text: 'Pièges fréquents' },
+  { depth: 2, slug: 'voir-aussi',       text: 'Voir aussi' },
+];
+---
+
+<DocsLayout
+  title="Test DocsLayout — Configurer le hostname"
+  description="Page de test factice pour valider le layout 3 colonnes."
+  headings={headings}
+  currentPath="/commands/bases/configurer-hostname"
+>
+  <article class="prose">
+    <div class="doc-meta">
+      <p style="font-size: var(--text-xs); color: var(--color-text-subtle); font-family: var(--font-mono); margin: 0 0 var(--space-2) 0;">
+        bases / configurer-hostname
+      </p>
+      <h1 style="margin: 0 0 var(--space-4) 0; font-size: var(--text-4xl); font-weight: 700; letter-spacing: var(--tracking-tight);">
+        Configurer le hostname
+      </h1>
+      <p style="color: var(--color-text-muted); font-size: var(--text-lg); margin: 0 0 var(--space-6) 0;">
+        Définir le nom d'hôte d'un switch ou routeur Cisco — visible dans le prompt CLI.
+      </p>
+    </div>
+
+    <h2 id="en-bref">En bref</h2>
+    <p>
+      Le <strong>hostname</strong> est le nom qui s'affiche dans le prompt CLI. Le changer permet d'identifier
+      rapidement chaque équipement dans une infra. La commande s'utilise en mode <strong>config global</strong>.
+    </p>
+
+    <h2 id="syntaxe">Syntaxe</h2>
+    <p>
+      Exemple de syntaxe : <code>hostname &lt;nom&gt;</code>
+    </p>
+    <ul>
+      <li><code>&lt;nom&gt;</code> : 1 à 63 caractères, sans espace, casse-sensitive</li>
+      <li>Pas de caractère spécial sauf <code>-</code> et <code>_</code></li>
+    </ul>
+
+    <h2 id="exemple-minimal">Exemple minimal</h2>
+    <p>Sur un switch que tu veux nommer <strong>SW-Lattes-01</strong> :</p>
+
+    <h3 id="detail-option-a">Détail option A</h3>
+    <p>Sous-section factice pour tester la TOC h3.</p>
+
+    <h2 id="etapes-detaillees">Étapes détaillées</h2>
+    <p>
+      Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+      Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
+    </p>
+    <ol>
+      <li>Passe en mode privilégié : tape <code>enable</code></li>
+      <li>Entre en config global : <code>configure terminal</code></li>
+      <li>Définis le hostname : <code>hostname SW-Lattes-01</code></li>
+      <li>Sauvegarde : <code>write memory</code></li>
+    </ol>
+
+    <h2 id="verification">Vérification</h2>
+    <p>Le changement est <strong>immédiat</strong> — le prompt affiche le nouveau nom.</p>
+    <blockquote>
+      <p>Pour vérifier : <code>show running-config | include hostname</code></p>
+    </blockquote>
+
+    <h2 id="pieges-frequents">Pièges fréquents</h2>
+    <p>Attention à la casse : <code>hostname Switch</code> et <code>hostname switch</code> produisent deux prompts différents.</p>
+    <table>
+      <thead>
+        <tr><th>Commande</th><th>Résultat</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>hostname SW-01</code></td><td>Prompt : <code>SW-01#</code></td></tr>
+        <tr><td><code>hostname sw-01</code></td><td>Prompt : <code>sw-01#</code></td></tr>
+      </tbody>
+    </table>
+
+    <h2 id="voir-aussi">Voir aussi</h2>
+    <ul>
+      <li><a href="/commands/bases/banner-motd">Configurer le banner MOTD</a></li>
+      <li><a href="/commands/bases/sauvegarder-config">Sauvegarder la configuration</a></li>
+      <li><a href="/commands/securite/enable-secret">Définir un mot de passe enable</a></li>
+    </ul>
+  </article>
+</DocsLayout>

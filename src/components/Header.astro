@@ -1,0 +1,318 @@
+---
+/**
+ * Header.astro — barre de navigation principale
+ *
+ * Structure :
+ *   [Hamburger mobile] [Logo] [Barre de recherche desktop] [ThemeToggle] [GitHub]
+ *
+ * Comportement :
+ *   - Sticky en haut de page
+ *   - Backdrop blur au scroll (classe .scrolled ajoutée par JS)
+ *   - Hamburger visible uniquement < 1024px
+ */
+import ThemeToggle from './ui/ThemeToggle.astro';
+import Search      from '@lucide/astro/icons/search';
+import Menu        from '@lucide/astro/icons/menu';
+
+interface Props {
+  currentPath?: string;
+}
+
+const { currentPath = '/' } = Astro.props;
+---
+
+<header class="header" id="site-header" role="banner">
+  <div class="header-inner">
+
+    {/* ---- Hamburger (mobile uniquement) ---- */}
+    <button
+      id="hamburger-btn"
+      class="hamburger"
+      aria-label="Ouvrir la navigation"
+      aria-controls="site-sidebar"
+      aria-expanded="false"
+    >
+      <Menu size={20} aria-hidden="true" />
+    </button>
+
+    {/* ---- Logo ---- */}
+    <a href="/" class="header-logo" aria-label="Cisco CLI Reference — Accueil">
+      <span class="logo-mark" aria-hidden="true">
+        {/* Carré Cisco Blue stylisé */}
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <rect x="0" y="0" width="8" height="8" rx="1" fill="currentColor" />
+          <rect x="12" y="0" width="8" height="8" rx="1" fill="currentColor" opacity="0.5" />
+          <rect x="0" y="12" width="8" height="8" rx="1" fill="currentColor" opacity="0.5" />
+          <rect x="12" y="12" width="8" height="8" rx="1" fill="currentColor" />
+        </svg>
+      </span>
+      <span class="logo-text">
+        Cisco CLI<span class="logo-accent">Ref</span>
+      </span>
+    </a>
+
+    {/* ---- Barre de recherche (desktop) ---- */}
+    <button
+      id="open-search"
+      class="header-search"
+      aria-label="Rechercher une commande (Ctrl+K)"
+      aria-keyshortcuts="Control+k"
+    >
+      <Search size={15} aria-hidden="true" />
+      <span class="search-placeholder">Rechercher une commande…</span>
+      <span class="search-shortcut" aria-hidden="true">
+        <kbd>Ctrl</kbd><kbd>K</kbd>
+      </span>
+    </button>
+
+    {/* ---- Actions à droite ---- */}
+    <div class="header-actions">
+      <ThemeToggle />
+      <a
+        href="https://github.com/teovidal/cisco-cli-ref"
+        class="header-github"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Code source sur GitHub (nouvelle fenêtre)"
+      >
+        {/* SVG GitHub — Lucide ne propose pas cette icône */}
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          aria-hidden="true"
+        >
+          <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+        </svg>
+      </a>
+    </div>
+
+  </div>
+</header>
+
+<script>
+/* ---- Backdrop blur au scroll ---- */
+const header = document.getElementById('site-header');
+let ticking = false;
+
+function updateHeader() {
+  header?.classList.toggle('scrolled', window.scrollY > 10);
+  ticking = false;
+}
+
+window.addEventListener('scroll', () => {
+  if (!ticking) {
+    requestAnimationFrame(updateHeader);
+    ticking = true;
+  }
+}, { passive: true });
+
+/* ---- Ouvrir la palette de recherche ---- */
+document.getElementById('open-search')?.addEventListener('click', () => {
+  document.dispatchEvent(new CustomEvent('open-search-palette'));
+});
+</script>
+
+<style>
+/* ---- Header principal ---- */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-header);
+  height: var(--layout-header-h);
+  background-color: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
+  transition:
+    background-color var(--duration-normal) var(--ease-in-out),
+    box-shadow var(--duration-normal) var(--ease-in-out);
+}
+
+.header.scrolled {
+  background-color: color-mix(in srgb, var(--color-bg) 85%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ---- Contenu intérieur ---- */
+.header-inner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  height: 100%;
+  padding: 0 var(--space-4);
+  max-width: 1536px;
+  margin: 0 auto;
+}
+
+/* ---- Hamburger ---- */
+.hamburger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.hamburger:hover {
+  background-color: var(--color-bg-muted);
+  color: var(--color-text);
+}
+
+.hamburger:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+@media (max-width: 1023px) {
+  .hamburger { display: flex; }
+}
+
+/* ---- Logo ---- */
+.header-logo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  text-decoration: none;
+  color: var(--color-text);
+  flex-shrink: 0;
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+.header-logo:hover {
+  opacity: 0.8;
+}
+
+.header-logo:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+  border-radius: var(--radius-sm);
+}
+
+.logo-mark {
+  color: var(--color-accent);
+  display: flex;
+  align-items: center;
+}
+
+.logo-text {
+  font-weight: 700;
+  font-size: var(--text-base);
+  letter-spacing: var(--tracking-tight);
+  white-space: nowrap;
+}
+
+.logo-accent {
+  color: var(--color-accent);
+}
+
+/* ---- Barre de recherche ---- */
+.header-search {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: 480px;
+  margin: 0 auto;
+  height: 36px;
+  padding: 0 var(--space-3);
+  background-color: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-subtle);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
+}
+
+.header-search:hover {
+  border-color: var(--color-border-strong);
+  background-color: var(--color-bg-muted);
+}
+
+.header-search:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+.search-placeholder {
+  flex: 1;
+  font-size: var(--text-sm);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+}
+
+.search-shortcut {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.search-shortcut kbd {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 1px 4px;
+  background-color: var(--color-bg-muted);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-subtle);
+  line-height: 1.4;
+}
+
+/* ---- Actions ---- */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+/* ---- Lien GitHub ---- */
+.header-github {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  text-decoration: none;
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
+}
+
+.header-github:hover {
+  color: var(--color-text);
+  background-color: var(--color-bg-muted);
+  border-color: var(--color-border-strong);
+}
+
+.header-github:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+/* ---- Mobile : masquer la search bar et le lien GitHub ---- */
+@media (max-width: 767px) {
+  .header-search { display: none; }
+  .header-github { display: none; }
+}
+</style>

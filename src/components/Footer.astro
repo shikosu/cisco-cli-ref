@@ -1,0 +1,159 @@
+---
+/**
+ * Footer.astro — pied de page du site
+ */
+import ExternalLink from '@lucide/astro/icons/external-link';
+
+const version = '0.1.0'; /* mis à jour manuellement lors des releases */
+const year = new Date().getFullYear();
+---
+
+<footer class="footer" role="contentinfo">
+  <div class="footer-inner">
+
+    {/* Colonne gauche : identité */}
+    <div class="footer-brand">
+      <p class="footer-name">Cisco CLI<span class="footer-accent">Ref</span></p>
+      <p class="footer-desc">
+        Référence CLI Cisco IOS pour étudiants Bac&nbsp;Pro&nbsp;CIEL et BTS&nbsp;SIO/SISR.
+      </p>
+    </div>
+
+    {/* Colonne centrale : liens */}
+    <nav class="footer-nav" aria-label="Liens du pied de page">
+      <ul role="list">
+        <li>
+          <a href="https://github.com/teovidal/cisco-cli-ref" target="_blank" rel="noopener noreferrer">
+            Code source
+            <ExternalLink size={12} aria-hidden="true" class="footer-ext-icon" />
+          </a>
+        </li>
+        <li>
+          <a href="https://github.com/teovidal/cisco-cli-ref/issues/new?template=suggestion.md" target="_blank" rel="noopener noreferrer">
+            Suggérer une commande
+            <ExternalLink size={12} aria-hidden="true" class="footer-ext-icon" />
+          </a>
+        </li>
+        <li>
+          <a href="/dev/showcase" rel="nofollow">Showcase</a>
+        </li>
+      </ul>
+    </nav>
+
+    {/* Colonne droite : meta */}
+    <div class="footer-meta">
+      <p>v{version}</p>
+      <p>&copy; {year} Teo Vidal</p>
+      <p>
+        <a href="https://github.com/teovidal/cisco-cli-ref/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">
+          Licence MIT
+        </a>
+      </p>
+    </div>
+
+  </div>
+</footer>
+
+<style>
+.footer {
+  border-top: 1px solid var(--color-border);
+  background-color: var(--color-bg-subtle);
+  margin-top: auto;
+}
+
+.footer-inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+  justify-content: space-between;
+  align-items: flex-start;
+  max-width: 1536px;
+  margin: 0 auto;
+  padding: var(--space-8) var(--space-6);
+}
+
+/* ---- Marque ---- */
+.footer-name {
+  font-weight: 700;
+  font-size: var(--text-base);
+  color: var(--color-text);
+  margin: 0 0 var(--space-2) 0;
+}
+
+.footer-accent {
+  color: var(--color-accent);
+}
+
+.footer-desc {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin: 0;
+  max-width: 280px;
+  line-height: var(--leading-relaxed);
+}
+
+/* ---- Navigation ---- */
+.footer-nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.footer-nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  text-decoration: none;
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+.footer-nav a:hover {
+  color: var(--color-accent);
+}
+
+.footer-nav a:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+  border-radius: var(--radius-sm);
+}
+
+.footer-ext-icon {
+  opacity: 0.6;
+}
+
+/* ---- Meta ---- */
+.footer-meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--color-text-subtle);
+  text-align: right;
+}
+
+.footer-meta p { margin: 0; }
+
+.footer-meta a {
+  color: var(--color-text-subtle);
+  text-decoration: none;
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+.footer-meta a:hover {
+  color: var(--color-text-muted);
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 640px) {
+  .footer-inner {
+    flex-direction: column;
+    gap: var(--space-6);
+  }
+  .footer-meta { text-align: left; }
+}
+</style>

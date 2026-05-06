@@ -1,0 +1,219 @@
+---
+/**
+ * SearchPalette.astro — modal de recherche Ctrl+K
+ *
+ * Phase 2 : coquille UI avec raccourcis clavier.
+ * Phase 4 : intégration Pagefind.
+ */
+import Search  from '@lucide/astro/icons/search';
+import Kbd     from './ui/Kbd.astro';
+---
+
+{/* Backdrop + modal */}
+<div
+  id="search-backdrop"
+  class="search-backdrop"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Palette de recherche"
+  hidden
+>
+  <div class="search-palette" id="search-palette">
+    {/* Champ de saisie */}
+    <div class="search-input-wrap">
+      <Search size={18} class="search-input-icon" aria-hidden="true" />
+      <input
+        id="search-input"
+        type="search"
+        class="search-input"
+        placeholder="Rechercher une commande Cisco…"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+        spellcheck="false"
+        aria-label="Rechercher"
+      />
+      <button
+        id="search-close-btn"
+        class="search-close"
+        aria-label="Fermer la recherche"
+      >
+        <Kbd>Esc</Kbd>
+      </button>
+    </div>
+
+    {/* Zone de résultats */}
+    <div id="search-results" class="search-results" role="listbox" aria-label="Résultats de recherche">
+      <p class="search-hint">
+        Tape une commande ou un mot-clé — ex. <strong>vlan</strong>, <strong>ssh</strong>, <strong>route</strong>…
+      </p>
+      {/* Les résultats Pagefind s'injecteront ici en Phase 4 */}
+    </div>
+
+    {/* Pied de palette */}
+    <div class="search-footer" aria-hidden="true">
+      <span><Kbd>↑</Kbd><Kbd>↓</Kbd> Naviguer</span>
+      <span><Kbd>↵</Kbd> Ouvrir</span>
+      <span><Kbd>Esc</Kbd> Fermer</span>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ----------------------------------------------------------------
+   Gestion de la palette de recherche
+   ---------------------------------------------------------------- */
+const backdrop = document.getElementById('search-backdrop') as HTMLElement | null;
+const input    = document.getElementById('search-input')    as HTMLInputElement | null;
+
+function openPalette() {
+  if (!backdrop) return;
+  backdrop.hidden = false;
+  document.body.style.overflow = 'hidden';
+  /* Focus sur l'input après l'animation */
+  requestAnimationFrame(() => input?.focus());
+}
+
+function closePalette() {
+  if (!backdrop) return;
+  backdrop.hidden = true;
+  document.body.style.overflow = '';
+  input && (input.value = '');
+}
+
+/* Ctrl+K / Meta+K pour ouvrir */
+document.addEventListener('keydown', (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+    e.preventDefault();
+    backdrop?.hidden ? openPalette() : closePalette();
+  }
+  if (e.key === 'Escape' && !backdrop?.hidden) {
+    closePalette();
+  }
+});
+
+/* Événement personnalisé émis par le bouton de recherche dans le Header */
+document.addEventListener('open-search-palette', openPalette);
+
+/* Fermer en cliquant sur le backdrop (hors de la palette) */
+backdrop?.addEventListener('click', (e) => {
+  if (e.target === backdrop) closePalette();
+});
+
+/* Bouton fermeture intégré */
+document.getElementById('search-close-btn')?.addEventListener('click', closePalette);
+</script>
+
+<style>
+/* ---- Backdrop ---- */
+.search-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgb(15 23 42 / 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 15vh;
+  padding-inline: var(--space-4);
+  animation: search-fade-in var(--duration-fast) var(--ease-out);
+}
+
+/* hidden attribute désactive le display */
+.search-backdrop[hidden] {
+  display: none;
+}
+
+@keyframes search-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ---- Palette ---- */
+.search-palette {
+  width: 100%;
+  max-width: 640px;
+  background-color: var(--color-bg-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  animation: search-scale-in var(--duration-fast) var(--ease-out);
+}
+
+@keyframes search-scale-in {
+  from { transform: scale(0.96); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+
+/* ---- Champ de saisie ---- */
+.search-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.search-input-icon {
+  color: var(--color-text-subtle);
+  flex-shrink: 0;
+}
+
+.search-input {
+  flex: 1;
+  border: none;
+  background: none;
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  color: var(--color-text);
+  outline: none;
+  min-width: 0;
+}
+
+.search-input::placeholder {
+  color: var(--color-text-subtle);
+}
+
+/* Masquer l'icône de suppression native (Chrome) */
+.search-input::-webkit-search-cancel-button { display: none; }
+
+.search-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+/* ---- Zone résultats ---- */
+.search-results {
+  max-height: 360px;
+  overflow-y: auto;
+  padding: var(--space-2) 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+
+.search-hint {
+  padding: var(--space-6) var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  text-align: center;
+  margin: 0;
+}
+
+/* ---- Pied ---- */
+.search-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-top: 1px solid var(--color-border);
+  font-size: var(--text-xs);
+  color: var(--color-text-subtle);
+  background-color: var(--color-bg-subtle);
+}
+</style>

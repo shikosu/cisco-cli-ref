@@ -1,0 +1,157 @@
+---
+/**
+ * TableOfContents.astro — sommaire de la page courante (headings h2/h3)
+ *
+ * Sticky sur la colonne droite (≥ 1280px).
+ * IntersectionObserver pour mettre en évidence la section visible.
+ */
+import type { Heading } from '../layouts/DocsLayout.astro';
+
+interface Props {
+  headings: Heading[];
+}
+
+const { headings } = Astro.props;
+
+/* Ne garder que les titres h2 et h3 */
+const tocHeadings = headings.filter(h => h.depth === 2 || h.depth === 3);
+---
+
+{tocHeadings.length > 0 && (
+  <aside class="toc" aria-label="Sommaire de la page">
+    <p class="toc-title">Sur cette page</p>
+    <nav>
+      <ul class="toc-list" role="list">
+        {tocHeadings.map((h) => (
+          <li class:list={['toc-item', h.depth === 3 && 'toc-item--sub']}>
+            <a
+              href={`#${h.slug}`}
+              class="toc-link"
+              data-toc-id={h.slug}
+            >
+              {h.text}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  </aside>
+)}
+
+<script>
+/* ---- IntersectionObserver — mettre en évidence la section visible ---- */
+(function () {
+  const links = document.querySelectorAll<HTMLAnchorElement>('.toc-link');
+  if (!links.length) return;
+
+  let activeId: string | null = null;
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          activeId = entry.target.id;
+        }
+      });
+      /* Mettre à jour les liens TOC */
+      links.forEach(link => {
+        const id = link.dataset.tocId;
+        link.classList.toggle('toc-link--active', id === activeId);
+      });
+    },
+    {
+      rootMargin: '-10% 0% -75% 0%',
+      threshold: 0,
+    }
+  );
+
+  /* Observer tous les headings référencés dans le TOC */
+  links.forEach(link => {
+    const id = link.dataset.tocId;
+    if (id) {
+      const target = document.getElementById(id);
+      if (target) observer.observe(target);
+    }
+  });
+})();
+</script>
+
+<style>
+/* ---- Colonne TOC ---- */
+.toc {
+  width: var(--layout-toc);
+  flex-shrink: 0;
+  position: sticky;
+  top: calc(var(--layout-header-h) + var(--space-8));
+  max-height: calc(100vh - var(--layout-header-h) - var(--space-16));
+  overflow-y: auto;
+  padding: var(--space-6) var(--space-4) var(--space-6) var(--space-6);
+
+  /* Masqué en dessous de 1280px */
+  display: none;
+
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+
+@media (min-width: 1280px) {
+  .toc { display: block; }
+}
+
+/* ---- Titre ---- */
+.toc-title {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--color-text-subtle);
+  margin: 0 0 var(--space-3) 0;
+}
+
+/* ---- Liste ---- */
+.toc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* ---- Liens ---- */
+.toc-link {
+  display: block;
+  font-size: var(--text-sm);
+  color: var(--color-text-subtle);
+  text-decoration: none;
+  padding: 3px 0;
+  line-height: var(--leading-snug);
+  border-left: 2px solid transparent;
+  padding-left: var(--space-3);
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    border-color var(--duration-fast) var(--ease-out);
+}
+
+.toc-link:hover {
+  color: var(--color-text-muted);
+}
+
+.toc-link:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+  border-radius: var(--radius-sm);
+}
+
+/* Lien h3 — indenté */
+.toc-item--sub .toc-link {
+  padding-left: calc(var(--space-3) + var(--space-4));
+  font-size: var(--text-xs);
+}
+
+/* ---- Lien actif ---- */
+.toc-link--active {
+  color: var(--color-accent);
+  border-left-color: var(--color-accent);
+}
+</style>

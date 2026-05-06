@@ -1,0 +1,122 @@
+---
+import HomeLayout from '../layouts/HomeLayout.astro';
+---
+
+<HomeLayout
+  title="Page introuvable"
+  description="La page que tu cherches n'existe pas."
+  noIndex={true}
+>
+  <div class="not-found">
+    <div class="not-found-terminal" aria-hidden="true">
+      <span class="nf-prompt">Switch#</span>
+      <span class="nf-cmd">show page 404</span>
+      <br />
+      <span class="nf-output">% Invalid input detected at '^' marker.</span>
+    </div>
+
+    <h1 class="not-found-title">Page introuvable</h1>
+    <p class="not-found-desc">
+      Cette page n'existe pas ou a été déplacée. Vérifie l'URL ou reviens à l'accueil.
+    </p>
+
+    <div class="not-found-actions">
+      <a href="/" class="nf-btn-primary">
+        Retour à l'accueil
+      </a>
+      <a href="/commands/bases/modes-cli" class="nf-btn-secondary">
+        Commencer par les bases
+      </a>
+    </div>
+  </div>
+</HomeLayout>
+
+<style>
+.not-found {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: calc(100vh - var(--layout-header-h) - 200px);
+  padding: var(--space-12) var(--space-6);
+}
+
+.not-found-terminal {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  background-color: var(--color-code-bg);
+  color: var(--color-code-fg);
+  padding: var(--space-4) var(--space-6);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-8);
+  line-height: 1.8;
+  text-align: left;
+}
+
+.nf-prompt { color: var(--color-mode-priv); font-weight: 700; }
+.nf-cmd    { color: var(--color-code-keyword); }
+.nf-output { color: var(--color-danger); }
+
+.not-found-title {
+  font-size: var(--text-4xl);
+  font-weight: 700;
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text);
+  margin: 0 0 var(--space-4) 0;
+}
+
+.not-found-desc {
+  font-size: var(--text-lg);
+  color: var(--color-text-muted);
+  margin: 0 0 var(--space-8) 0;
+  max-width: 400px;
+}
+
+.not-found-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  justify-content: center;
+}
+
+.nf-btn-primary {
+  padding: var(--space-3) var(--space-6);
+  background-color: var(--color-accent);
+  color: var(--color-text-inverse);
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+
+.nf-btn-primary:hover {
+  background-color: var(--color-accent-hover);
+}
+
+.nf-btn-primary:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+.nf-btn-secondary {
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-bg-muted);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  font-size: var(--text-sm);
+  transition: border-color var(--duration-fast) var(--ease-out);
+}
+
+.nf-btn-secondary:hover {
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+}
+
+.nf-btn-secondary:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+</style>

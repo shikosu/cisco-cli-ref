@@ -1,0 +1,145 @@
+---
+/**
+ * DocsLayout.astro — layout 3 colonnes pour les fiches de commandes
+ *
+ * Colonnes (desktop xl ≥ 1280px) :
+ *   Sidebar 280px | Contenu max 760px | TOC 240px
+ *
+ * Responsive :
+ *   < 1024px  → sidebar = drawer overlay, TOC masqué
+ *   1024-1279px → sidebar visible, TOC masqué
+ *   ≥ 1280px  → tout visible
+ */
+import Layout          from './Layout.astro';
+import Header          from '../components/Header.astro';
+import Sidebar         from '../components/Sidebar.astro';
+import TableOfContents from '../components/TableOfContents.astro';
+import Footer          from '../components/Footer.astro';
+import SearchPalette   from '../components/SearchPalette.astro';
+
+export interface Heading {
+  depth: number;
+  slug: string;
+  text: string;
+}
+
+interface Props {
+  title: string;
+  description?: string;
+  headings?: Heading[];
+  currentPath?: string;
+}
+
+const {
+  title,
+  description,
+  headings = [],
+  currentPath = Astro.url.pathname,
+} = Astro.props;
+---
+
+<Layout title={title} description={description}>
+  <Header currentPath={currentPath} />
+
+  <div class="docs-wrapper" id="docs-wrapper">
+    {/* Overlay mobile (fond sombre derrière le drawer) */}
+    <div class="sidebar-overlay" id="sidebar-overlay" aria-hidden="true"></div>
+
+    {/* Colonne 1 : Sidebar */}
+    <Sidebar currentPath={currentPath} />
+
+    {/* Colonne 2 : Contenu principal */}
+    <main id="main" class="docs-main">
+      <div class="docs-content">
+        <slot />
+      </div>
+    </main>
+
+    {/* Colonne 3 : Table des matières */}
+    <TableOfContents headings={headings} />
+  </div>
+
+  <Footer />
+  <SearchPalette />
+</Layout>
+
+<script>
+/* ----------------------------------------------------------------
+   Drawer sidebar mobile
+   ---------------------------------------------------------------- */
+const wrapper  = document.getElementById('docs-wrapper');
+const overlay  = document.getElementById('sidebar-overlay');
+const hamburger = document.getElementById('hamburger-btn');
+const sidebarClose = document.getElementById('sidebar-close');
+
+function openSidebar() {
+  document.body.classList.add('sidebar-open');
+  document.getElementById('site-sidebar')?.setAttribute('aria-hidden', 'false');
+}
+
+function closeSidebar() {
+  document.body.classList.remove('sidebar-open');
+  document.getElementById('site-sidebar')?.setAttribute('aria-hidden', 'true');
+}
+
+hamburger?.addEventListener('click', () => {
+  document.body.classList.contains('sidebar-open') ? closeSidebar() : openSidebar();
+});
+
+overlay?.addEventListener('click', closeSidebar);
+sidebarClose?.addEventListener('click', closeSidebar);
+
+/* Fermer avec Escape */
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && document.body.classList.contains('sidebar-open')) {
+    closeSidebar();
+    hamburger?.focus();
+  }
+});
+</script>
+
+<style>
+/* ---- Wrapper principal (flex row) ---- */
+.docs-wrapper {
+  display: flex;
+  align-items: flex-start;
+  min-height: calc(100vh - var(--layout-header-h));
+}
+
+/* ---- Overlay mobile ---- */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  top: var(--layout-header-h);
+  background-color: rgb(15 23 42 / 0.5);
+  backdrop-filter: blur(2px);
+  z-index: calc(var(--z-sidebar) - 1);
+  opacity: 0;
+  transition: opacity var(--duration-normal) var(--ease-in-out);
+}
+
+:global(body.sidebar-open) .sidebar-overlay {
+  display: block;
+  opacity: 1;
+}
+
+/* ---- Colonne contenu (milieu) ---- */
+.docs-main {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-8) var(--space-6);
+}
+
+.docs-content {
+  max-width: var(--layout-content-max);
+  margin: 0 auto;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 1023px) {
+  .docs-main {
+    padding: var(--space-6) var(--space-4);
+  }
+}
+</style>

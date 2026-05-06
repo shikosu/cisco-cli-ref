@@ -1,0 +1,187 @@
+---
+/**
+ * CategoryCard.astro — carte de catégorie sur la page d'accueil
+ *
+ * Affiche : icône + titre + description + nombre de commandes + lien.
+ * Animation stagger au chargement via CSS custom property --delay.
+ */
+interface Props {
+  slug: string;
+  title: string;
+  description: string;
+  commandCount: number;
+  icon: string;   /* Nom d'icône (utilisé pour la couleur via data-icon) */
+  href: string;
+  index?: number; /* Pour le stagger de l'animation */
+}
+
+const {
+  slug,
+  title,
+  description,
+  commandCount,
+  icon,
+  href,
+  index = 0,
+} = Astro.props;
+
+/* Couleur de l'icône par catégorie (liée aux tokens CLI) */
+const iconColorMap: Record<string, string> = {
+  'bases':      '--color-accent',
+  'securite':   '--color-mode-config',
+  'switching':  '--color-mode-config-vlan',
+  'routing':    '--color-mode-config-rtr',
+  'services':   '--color-mode-config-if',
+  'acl':        '--color-mode-config-line',
+  'diagnostic': '--color-mode-priv',
+};
+
+const iconColor = iconColorMap[slug] ?? '--color-accent';
+const delay = `${index * 60}ms`;
+---
+
+<a
+  href={href}
+  class="cat-card"
+  style={`--card-color: var(${iconColor}); --delay: ${delay};`}
+  aria-label={`${title} — ${commandCount} commandes`}
+>
+  {/* Indicateur de couleur */}
+  <div class="cat-card-stripe" aria-hidden="true"></div>
+
+  <div class="cat-card-body">
+    {/* En-tête */}
+    <div class="cat-card-header">
+      <h2 class="cat-card-title">{title}</h2>
+      <span class="cat-card-count">{commandCount} cmd</span>
+    </div>
+
+    {/* Description */}
+    <p class="cat-card-desc">{description}</p>
+  </div>
+
+  {/* Indicateur "aller à" */}
+  <div class="cat-card-arrow" aria-hidden="true">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M5 12h14M12 5l7 7-7 7"/>
+    </svg>
+  </div>
+</a>
+
+<style>
+.cat-card {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  overflow: hidden;
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+
+  /* Animation d'entrée staggerée */
+  animation: card-fade-in var(--duration-slow) var(--ease-out) var(--delay, 0ms) both;
+}
+
+@keyframes card-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.cat-card:hover {
+  border-color: var(--card-color);
+  box-shadow: 0 0 0 1px var(--card-color), var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.cat-card:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+  border-color: var(--color-accent);
+}
+
+/* ---- Bande colorée gauche ---- */
+.cat-card-stripe {
+  width: 4px;
+  background-color: var(--card-color);
+  flex-shrink: 0;
+  transition: width var(--duration-fast) var(--ease-out);
+}
+
+.cat-card:hover .cat-card-stripe {
+  width: 6px;
+}
+
+/* ---- Corps ---- */
+.cat-card-body {
+  flex: 1;
+  padding: var(--space-4) var(--space-4) var(--space-4) var(--space-4);
+  min-width: 0;
+}
+
+/* ---- En-tête ---- */
+.cat-card-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.cat-card-title {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cat-card-count {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--card-color);
+  background-color: color-mix(in srgb, var(--card-color) 10%, transparent);
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ---- Description ---- */
+.cat-card-desc {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin: 0;
+  line-height: var(--leading-snug);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ---- Flèche ---- */
+.cat-card-arrow {
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-4) 0 var(--space-2);
+  color: var(--color-text-subtle);
+  transition: color var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
+}
+
+.cat-card:hover .cat-card-arrow {
+  color: var(--card-color);
+  transform: translateX(3px);
+}
+</style>

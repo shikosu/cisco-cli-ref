@@ -1,22 +1,416 @@
 ---
-import '../styles/global.css';
+import HomeLayout    from '../layouts/HomeLayout.astro';
+import CategoryCard  from '../components/CategoryCard.astro';
+import { NAV_CATEGORIES } from '../lib/nav';
+
+const totalCommands = NAV_CATEGORIES.reduce((acc, c) => acc + c.commandCount, 0);
 ---
 
-<html lang="fr" data-theme="light">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Cisco CLI Reference</title>
-	</head>
-	<body>
-		<a href="#main" class="skip-link">Aller au contenu principal</a>
-		<main id="main" style="font-family: var(--font-sans); padding: 2rem;">
-			<h1 style="color: var(--color-accent);">Cisco CLI Reference</h1>
-			<p style="color: var(--color-text-muted); font-family: var(--font-mono);">
-				Phase 0 — Setup OK ✓
-			</p>
-		</main>
-	</body>
-</html>
+<HomeLayout
+  title="Cisco CLI Reference"
+  description="Référence des commandes CLI Cisco IOS pour étudiants Bac Pro CIEL et BTS SIO/SISR. Trouve la commande en 5 secondes."
+>
+
+  {/* ================================================================
+      Hero
+      ================================================================ */}
+  <section class="hero">
+    <div class="hero-inner">
+      <p class="hero-eyebrow">Bac Pro CIEL · BTS SIO · BTS SISR</p>
+      <h1 class="hero-title">
+        Référence CLI<br />
+        <span class="hero-accent">Cisco IOS</span>
+      </h1>
+      <p class="hero-lead">
+        {totalCommands} commandes documentées. Syntaxe, exemples copiables, topologies ASCII et
+        pièges fréquents. Imprimable pour tes TP.
+      </p>
+      <div class="hero-actions">
+        <a href="/commands/bases/modes-cli" class="btn-primary">
+          Commencer par les bases
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
+        <button id="hero-search-btn" class="btn-secondary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+          </svg>
+          Rechercher
+          <span class="btn-shortcut" aria-hidden="true">Ctrl K</span>
+        </button>
+      </div>
+    </div>
+
+    {/* Décoration terminale */}
+    <div class="hero-terminal" aria-hidden="true">
+      <div class="terminal-bar">
+        <span class="terminal-dot dot-red"></span>
+        <span class="terminal-dot dot-yellow"></span>
+        <span class="terminal-dot dot-green"></span>
+        <span class="terminal-title">IOS — Packet Tracer</span>
+      </div>
+      <div class="terminal-body">
+        <p><span class="t-host">Switch</span><span class="t-char t-user">&gt;</span> <span class="t-cmd">enable</span></p>
+        <p><span class="t-host">Switch</span><span class="t-char t-priv">#</span> <span class="t-cmd">configure terminal</span></p>
+        <p><span class="t-host">Switch</span><span class="t-paren">(config)</span><span class="t-char t-config">#</span> <span class="t-cmd">vlan 10</span></p>
+        <p><span class="t-host">Switch</span><span class="t-paren">(config-vlan)</span><span class="t-char t-vlan">#</span> <span class="t-cmd">name Eleves</span></p>
+        <p><span class="t-host">Switch</span><span class="t-paren">(config-vlan)</span><span class="t-char t-vlan">#</span> <span class="t-cursor">&#9608;</span></p>
+      </div>
+    </div>
+  </section>
+
+  {/* ================================================================
+      Grille des 7 catégories
+      ================================================================ */}
+  <section class="categories" aria-labelledby="categories-heading">
+    <div class="categories-inner">
+      <h2 id="categories-heading" class="section-title">7 catégories IOS</h2>
+      <p class="section-desc">
+        Chaque catégorie correspond à une partie de l'examen. Commence par les bases, finit par le diagnostic.
+      </p>
+
+      <div class="categories-grid">
+        {NAV_CATEGORIES.map((cat, i) => (
+          <CategoryCard
+            slug={cat.slug}
+            title={cat.title}
+            description={cat.description}
+            commandCount={cat.commandCount}
+            icon={cat.icon}
+            href={`/categories/${cat.slug}`}
+            index={i}
+          />
+        ))}
+      </div>
+    </div>
+  </section>
+
+  {/* ================================================================
+      Démarrage rapide
+      ================================================================ */}
+  <section class="quickstart" aria-labelledby="quickstart-heading">
+    <div class="quickstart-inner">
+      <h2 id="quickstart-heading" class="section-title">Démarrage rapide</h2>
+      <div class="quickstart-steps">
+        <div class="qs-step">
+          <div class="qs-num" aria-hidden="true">1</div>
+          <div class="qs-content">
+            <h3>Trouve ta commande</h3>
+            <p>Tape <kbd>Ctrl</kbd>&nbsp;<kbd>K</kbd> ou parcours les 7 catégories ci-dessus.</p>
+          </div>
+        </div>
+        <div class="qs-step">
+          <div class="qs-num" aria-hidden="true">2</div>
+          <div class="qs-content">
+            <h3>Lis la syntaxe et l'exemple</h3>
+            <p>Chaque fiche montre le mode CLI exact, la syntaxe et un exemple copiable en 1 clic.</p>
+          </div>
+        </div>
+        <div class="qs-step">
+          <div class="qs-num" aria-hidden="true">3</div>
+          <div class="qs-content">
+            <h3>Imprime la cheatsheet</h3>
+            <p>Sur la page d'une catégorie, clique <strong>Imprimer</strong> pour obtenir un résumé A4 pour ton TP.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</HomeLayout>
+
+<script>
+document.getElementById('hero-search-btn')?.addEventListener('click', () => {
+  document.dispatchEvent(new CustomEvent('open-search-palette'));
+});
+</script>
+
+<style>
+/* ================================================================
+   HERO
+   ================================================================ */
+.hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-12);
+  padding: var(--space-16) var(--space-6) var(--space-12);
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.hero-inner {
+  flex: 1;
+  min-width: 280px;
+}
+
+.hero-eyebrow {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--color-accent);
+  margin: 0 0 var(--space-4) 0;
+}
+
+.hero-title {
+  font-size: var(--text-5xl);
+  font-weight: 700;
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
+  color: var(--color-text);
+  margin: 0 0 var(--space-6) 0;
+}
+
+.hero-accent {
+  color: var(--color-accent);
+}
+
+.hero-lead {
+  font-size: var(--text-lg);
+  line-height: var(--leading-relaxed);
+  color: var(--color-text-muted);
+  margin: 0 0 var(--space-8) 0;
+  max-width: 480px;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+/* ---- Boutons ---- */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-6);
+  background-color: var(--color-accent);
+  color: var(--color-text-inverse);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition:
+    background-color var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out);
+}
+
+.btn-primary:hover {
+  background-color: var(--color-accent-hover);
+  transform: translateY(-1px);
+}
+
+.btn-primary:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-bg-muted);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  cursor: pointer;
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.btn-secondary:hover {
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+}
+
+.btn-secondary:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+.btn-shortcut {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  opacity: 0.6;
+  margin-left: var(--space-1);
+}
+
+/* ---- Terminal décoratif ---- */
+.hero-terminal {
+  flex: 1;
+  min-width: 280px;
+  max-width: 420px;
+  background-color: var(--color-code-bg);
+  border-radius: var(--radius-lg);
+  border: 1px solid color-mix(in srgb, var(--color-code-fg) 10%, transparent);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+.terminal-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background-color: color-mix(in srgb, var(--color-code-fg) 5%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-code-fg) 8%, transparent);
+}
+
+.terminal-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dot-red    { background-color: #FF5F56; }
+.dot-yellow { background-color: #FFBD2E; }
+.dot-green  { background-color: #27C93F; }
+
+.terminal-title {
+  font-size: var(--text-xs);
+  color: var(--color-code-comment);
+  margin: 0 auto;
+}
+
+.terminal-body {
+  padding: var(--space-4);
+  line-height: 1.8;
+}
+
+.terminal-body p { margin: 0; }
+
+.t-host   { color: var(--color-code-fg); opacity: 0.7; }
+.t-paren  { color: var(--color-code-fg); opacity: 0.6; }
+.t-char   { font-weight: 700; }
+.t-user   { color: var(--color-mode-user); }
+.t-priv   { color: var(--color-mode-priv); }
+.t-config { color: var(--color-mode-config); }
+.t-vlan   { color: var(--color-mode-config-vlan); }
+.t-cmd    { color: var(--color-code-keyword); }
+.t-cursor {
+  color: var(--color-code-fg);
+  animation: blink 1s step-end infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+/* ================================================================
+   CATÉGORIES
+   ================================================================ */
+.categories {
+  padding: var(--space-8) var(--space-6) var(--space-12);
+  background-color: var(--color-bg-subtle);
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.categories-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.section-title {
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text);
+  margin: 0 0 var(--space-2) 0;
+}
+
+.section-desc {
+  font-size: var(--text-base);
+  color: var(--color-text-muted);
+  margin: 0 0 var(--space-8) 0;
+}
+
+.categories-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-4);
+}
+
+/* ================================================================
+   DÉMARRAGE RAPIDE
+   ================================================================ */
+.quickstart {
+  padding: var(--space-12) var(--space-6);
+}
+
+.quickstart-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.quickstart-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-8);
+  margin-top: var(--space-8);
+}
+
+.qs-step {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-4);
+  flex: 1;
+  min-width: 220px;
+}
+
+.qs-num {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: var(--color-accent-bg);
+  color: var(--color-accent);
+  font-weight: 700;
+  font-size: var(--text-lg);
+  flex-shrink: 0;
+  border: 1px solid color-mix(in srgb, var(--color-accent) 20%, transparent);
+}
+
+.qs-content h3 {
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 var(--space-2) 0;
+}
+
+.qs-content p {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  line-height: var(--leading-relaxed);
+  margin: 0;
+}
+
+.qs-content kbd {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 1px 5px;
+  background-color: var(--color-bg-muted);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  border-bottom-width: 2px;
+}
+
+/* ---- Responsive hero ---- */
+@media (max-width: 767px) {
+  .hero-title { font-size: var(--text-4xl); }
+  .hero-terminal { display: none; }
+}
+</style>
