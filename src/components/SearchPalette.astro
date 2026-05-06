@@ -173,10 +173,10 @@ document.addEventListener('keydown', (e) => {
     return;
   }
 
-  /* / hors d'un champ de saisie → ouvrir palette */
+  /* / hors d'un champ de saisie → ouvrir palette (seulement si fermée) */
   if (
     e.key === '/' &&
-    !backdrop?.hidden === false &&
+    backdrop?.hidden &&
     !(e.target instanceof HTMLInputElement) &&
     !(e.target instanceof HTMLTextAreaElement)
   ) {
