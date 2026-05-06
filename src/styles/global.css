@@ -2,3 +2,37 @@
 @import "./fonts.css";
 @import "./tokens.css";
 @import "./prose.css";
+
+/* ================================================================
+   IMPRESSION — styles globaux appliqués à toutes les pages
+   Les styles spécifiques aux catégories restent dans [category].astro
+   ================================================================ */
+@media print {
+  @page {
+    margin: 1.5cm;
+  }
+
+  #site-header,
+  #site-sidebar,
+  .toc,
+  footer,
+  .search-backdrop {
+    display: none !important;
+  }
+
+  body {
+    font-size: 11pt;
+    background: white !important;
+    color: black !important;
+  }
+
+  .docs-wrapper {
+    display: block !important;
+  }
+
+  .docs-main {
+    padding: 0 !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+  }
+}

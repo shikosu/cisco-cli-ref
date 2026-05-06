@@ -351,34 +351,13 @@ const currentPath = `/categories/${category}`;
 }
 
 /* ================================================================
-   CSS IMPRESSION — cheatsheet A4
+   CSS IMPRESSION — cheatsheet A4 (spécifique à la page catégorie)
+   Les règles globales (masquer header/sidebar/TOC/footer, marges @page)
+   sont dans global.css et s'appliquent à toutes les pages.
    ================================================================ */
 @media print {
-  /* Masquer les éléments de navigation */
-  :global(#site-header),
-  :global(#site-sidebar),
-  :global(.toc),
-  :global(.footer),
-  :global(.search-backdrop),
   .print-hide {
     display: none !important;
-  }
-
-  /* Mise en page A4 */
-  :global(body) {
-    font-size: 11pt;
-    margin: 0;
-    background: white;
-    color: black;
-  }
-
-  :global(.docs-wrapper) {
-    display: block;
-  }
-
-  :global(.docs-main) {
-    padding: 0;
-    max-width: 100%;
   }
 
   .category-page {

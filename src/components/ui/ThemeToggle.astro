@@ -51,18 +51,10 @@
 </button>
 
 <script>
-(function () {
-  const btn = document.getElementById('theme-toggle');
-  if (!btn) return;
+import { toggleTheme } from '@/lib/theme';
 
-  btn.addEventListener('click', () => {
-    const html = document.documentElement;
-    const current = html.dataset.theme ?? 'light';
-    const next = current === 'dark' ? 'light' : 'dark';
-    html.dataset.theme = next;
-    try { localStorage.setItem('theme', next); } catch { /* silencieux */ }
-  });
-})();
+const btn = document.getElementById('theme-toggle');
+btn?.addEventListener('click', toggleTheme);
 </script>
 
 <style>

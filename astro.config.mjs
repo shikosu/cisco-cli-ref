@@ -35,5 +35,12 @@ export default defineConfig({
 
   vite: {
     plugins: [tailwindcss()],
+    build: {
+      rollupOptions: {
+        /* Pagefind est généré après le build dans dist/pagefind/
+           Ce n'est pas un module résolvable à la compilation. */
+        external: ['/pagefind/pagefind.js'],
+      },
+    },
   },
 });
