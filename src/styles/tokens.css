@@ -1,0 +1,267 @@
+/* ============================================================
+   TOKENS DE DESIGN — Cisco CLI Reference
+   Source de vérité : DESIGN.md
+   ============================================================ */
+
+/* ----------------------------------------------------------
+   MODE CLAIR (défaut)
+   ---------------------------------------------------------- */
+:root {
+  /* Polices */
+  --font-sans:  'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono:  'IBM Plex Mono', 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Échelle typographique (ratio 1.2) */
+  --text-xs:    0.75rem;
+  --text-sm:    0.875rem;
+  --text-base:  1rem;
+  --text-lg:    1.125rem;
+  --text-xl:    1.25rem;
+  --text-2xl:   1.5rem;
+  --text-3xl:   1.875rem;
+  --text-4xl:   2.25rem;
+  --text-5xl:   3rem;
+
+  /* Hauteurs de ligne */
+  --leading-tight:   1.2;
+  --leading-snug:    1.4;
+  --leading-normal:  1.6;
+  --leading-relaxed: 1.75;
+
+  /* Letter-spacings */
+  --tracking-tight:  -0.02em;
+  --tracking-normal: 0;
+  --tracking-wide:   0.05em;
+
+  /* ---- Surfaces ---- */
+  --color-bg:          #FFFFFF;
+  --color-bg-subtle:   #F8FAFC;
+  --color-bg-muted:    #F1F5F9;
+  --color-bg-elevated: #FFFFFF;
+
+  /* ---- Bordures ---- */
+  --color-border:        #E2E8F0;
+  --color-border-strong: #CBD5E1;
+
+  /* ---- Texte ---- */
+  --color-text:         #0F172A;
+  --color-text-muted:   #475569;
+  --color-text-subtle:  #94A3B8;
+  --color-text-inverse: #FFFFFF;
+
+  /* ---- Cisco Blue (accent signature) ---- */
+  --color-accent:       #00BCEB;
+  --color-accent-hover: #0098BC;
+  --color-accent-bg:    #E6F8FD;
+
+  /* ---- Couleurs des modes CLI (composant signature CliPrompt) ---- */
+  --color-mode-user:        #64748B;
+  --color-mode-priv:        #00BCEB;
+  --color-mode-config:      #7C3AED;
+  --color-mode-config-if:   #059669;
+  --color-mode-config-line: #DB2777;
+  --color-mode-config-rtr:  #DC2626;
+  --color-mode-config-vlan: #D97706;
+
+  /* ---- États sémantiques ---- */
+  --color-success:    #16A34A;
+  --color-success-bg: #F0FDF4;
+  --color-warning:    #D97706;
+  --color-warning-bg: #FFFBEB;
+  --color-danger:     #DC2626;
+  --color-danger-bg:  #FEF2F2;
+  --color-info:       #0284C7;
+  --color-info-bg:    #F0F9FF;
+
+  /* ---- Niveaux de difficulté ---- */
+  --color-diff-debutant: #16A34A;
+  --color-diff-intermed: #D97706;
+  --color-diff-avance:   #DC2626;
+
+  /* ---- Code (toujours sombre, même en light) ---- */
+  --color-code-bg:      #0F172A;
+  --color-code-fg:      #E2E8F0;
+  --color-code-comment: #64748B;
+  --color-code-keyword: #00BCEB;
+  --color-code-string:  #4ADE80;
+  --color-code-number:  #FB923C;
+  --color-code-punct:   #94A3B8;
+
+  /* ---- Focus ring ---- */
+  --ring: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-accent);
+
+  /* ---- Ombres (flat-ish, très légères) ---- */
+  --shadow-sm: 0 1px 2px rgb(15 23 42 / 0.04);
+  --shadow-md: 0 2px 8px rgb(15 23 42 / 0.06), 0 1px 2px rgb(15 23 42 / 0.04);
+  --shadow-lg: 0 8px 24px rgb(15 23 42 / 0.08), 0 2px 4px rgb(15 23 42 / 0.04);
+
+  /* ---- Espacement (échelle 4px) ---- */
+  --space-1:  0.25rem;
+  --space-2:  0.5rem;
+  --space-3:  0.75rem;
+  --space-4:  1rem;
+  --space-6:  1.5rem;
+  --space-8:  2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-24: 6rem;
+
+  /* ---- Rayons ---- */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+
+  /* ---- Layout ---- */
+  --layout-sidebar:     280px;
+  --layout-toc:         240px;
+  --layout-content-max: 760px;
+  --layout-header-h:    60px;
+  --layout-gap:         var(--space-12);
+
+  /* ---- Z-index ---- */
+  --z-header:  50;
+  --z-sidebar: 40;
+  --z-overlay: 90;
+  --z-modal:   100;
+  --z-toast:   110;
+
+  /* ---- Animations ---- */
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+
+  --duration-instant: 75ms;
+  --duration-fast:    150ms;
+  --duration-normal:  250ms;
+  --duration-slow:    400ms;
+}
+
+/* ----------------------------------------------------------
+   MODE SOMBRE
+   ---------------------------------------------------------- */
+[data-theme="dark"] {
+  /* ---- Surfaces ---- */
+  --color-bg:          #0B1221;
+  --color-bg-subtle:   #111827;
+  --color-bg-muted:    #1E293B;
+  --color-bg-elevated: #1E293B;
+
+  /* ---- Bordures ---- */
+  --color-border:        #1E293B;
+  --color-border-strong: #334155;
+
+  /* ---- Texte ---- */
+  --color-text:         #F1F5F9;
+  --color-text-muted:   #94A3B8;
+  --color-text-subtle:  #64748B;
+  --color-text-inverse: #0F172A;
+
+  /* ---- Accent (plus lumineux en dark pour le contraste) ---- */
+  --color-accent:       #22D3EE;
+  --color-accent-hover: #67E8F9;
+  --color-accent-bg:    #083344;
+
+  /* ---- Modes CLI (saturation augmentée sur fond sombre) ---- */
+  --color-mode-user:        #94A3B8;
+  --color-mode-priv:        #22D3EE;
+  --color-mode-config:      #A78BFA;
+  --color-mode-config-if:   #34D399;
+  --color-mode-config-line: #F472B6;
+  --color-mode-config-rtr:  #F87171;
+  --color-mode-config-vlan: #FBBF24;
+
+  /* ---- États sémantiques ---- */
+  --color-success:    #4ADE80;
+  --color-success-bg: #052E16;
+  --color-warning:    #FBBF24;
+  --color-warning-bg: #422006;
+  --color-danger:     #F87171;
+  --color-danger-bg:  #450A0A;
+  --color-info:       #38BDF8;
+  --color-info-bg:    #082F49;
+
+  /* ---- Ombres (plus prononcées sur fond sombre) ---- */
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 2px 8px rgb(0 0 0 / 0.4);
+  --shadow-lg: 0 8px 24px rgb(0 0 0 / 0.5);
+
+  /* Le focus ring s'adapte au fond sombre */
+  --ring: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-accent);
+}
+
+/* ----------------------------------------------------------
+   BASE GLOBALE
+   ---------------------------------------------------------- */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  transition: background-color var(--duration-normal) var(--ease-in-out),
+              color var(--duration-normal) var(--ease-in-out);
+}
+
+/* ---- Focus visible (obligatoire pour l'accessibilité) ---- */
+:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+  border-radius: var(--radius-sm);
+}
+
+/* ---- Respect de la préférence de mouvement réduit ---- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ---- Skip link (accessibilité clavier) ---- */
+.skip-link {
+  position: absolute;
+  top: -9999px;
+  left: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-accent);
+  color: var(--color-text-inverse);
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  z-index: var(--z-modal);
+}
+
+.skip-link:focus {
+  top: var(--space-4);
+}
+
+/* ---- Scrollbar fine (WebKit) ---- */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-subtle);
+}
