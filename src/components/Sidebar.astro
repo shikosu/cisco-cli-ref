@@ -6,9 +6,11 @@
  * Mobile (< 1024px) : drawer overlay (géré par DocsLayout).
  *
  * Catégories repliables via <details>/<summary> (natif HTML, accessible).
- * La catégorie contenant le lien actif s'ouvre automatiquement au chargement.
+ * La catégorie contenant le lien actif s'ouvre automatiquement.
+ * Les fiches sans MDX sont affichées en "à venir" (non-cliquables).
  */
 import { NAV_CATEGORIES } from '../lib/nav';
+import { getAvailableIds } from '../lib/commands';
 import ChevronRight from '@lucide/astro/icons/chevron-right';
 import X            from '@lucide/astro/icons/x';
 
@@ -18,7 +20,10 @@ interface Props {
 
 const { currentPath = '' } = Astro.props;
 
-/* Déterminer quelle catégorie est active (contient le lien courant) */
+/* IDs des fiches disponibles (ex: 'bases/configurer-hostname') */
+const availableIds = await getAvailableIds();
+
+/* Catégorie active = celle qui contient le lien courant */
 const activeCategorySlug = NAV_CATEGORIES.find(cat =>
   cat.items.some(item => currentPath.startsWith(`/commands/${cat.slug}`))
 )?.slug ?? '';
@@ -55,16 +60,25 @@ const activeCategorySlug = NAV_CATEGORIES.find(cat =>
           </summary>
           <ul class="sidebar-items" role="list">
             {cat.items.map((item) => {
+              const id = `${cat.slug}/${item.slug}`;
+              const available = availableIds.has(id);
               const isActive = currentPath === item.href || currentPath === item.href + '/';
               return (
                 <li>
-                  <a
-                    href={item.href}
-                    class:list={['sidebar-link', isActive && 'sidebar-link--active']}
-                    aria-current={isActive ? 'page' : undefined}
-                  >
-                    {item.title}
-                  </a>
+                  {available ? (
+                    <a
+                      href={item.href}
+                      class:list={['sidebar-link', isActive && 'sidebar-link--active']}
+                      aria-current={isActive ? 'page' : undefined}
+                    >
+                      {item.title}
+                    </a>
+                  ) : (
+                    <span class="sidebar-link sidebar-link--stub" aria-disabled="true">
+                      {item.title}
+                      <span class="sidebar-stub-badge">bientôt</span>
+                    </span>
+                  )}
                 </li>
               );
             })}
@@ -79,7 +93,7 @@ const activeCategorySlug = NAV_CATEGORIES.find(cat =>
     <a href="/categories" class="sidebar-footer-link">Toutes les catégories</a>
     <span class="sidebar-footer-sep" aria-hidden="true">·</span>
     <span class="sidebar-footer-count">
-      {NAV_CATEGORIES.reduce((acc, c) => acc + c.commandCount, 0)} commandes
+      {availableIds.size} / {NAV_CATEGORIES.reduce((acc, c) => acc + c.commandCount, 0)} fiches
     </span>
   </div>
 </aside>
@@ -97,8 +111,6 @@ const activeCategorySlug = NAV_CATEGORIES.find(cat =>
   border-right: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
-
-  /* Scrollbar fine */
   scrollbar-width: thin;
   scrollbar-color: var(--color-border-strong) transparent;
 }
@@ -175,9 +187,7 @@ const activeCategorySlug = NAV_CATEGORIES.find(cat =>
 }
 
 /* ---- Catégorie (details/summary) ---- */
-.sidebar-category {
-  border: none;
-}
+.sidebar-category { border: none; }
 
 .sidebar-cat-header {
   display: flex;
@@ -190,13 +200,9 @@ const activeCategorySlug = NAV_CATEGORIES.find(cat =>
   transition: background-color var(--duration-fast) var(--ease-out);
 }
 
-/* Masquer le triangle natif */
 .sidebar-cat-header::-webkit-details-marker { display: none; }
 .sidebar-cat-header::marker { display: none; }
-
-.sidebar-cat-header:hover {
-  background-color: var(--color-bg-muted);
-}
+.sidebar-cat-header:hover { background-color: var(--color-bg-muted); }
 
 .sidebar-cat-label {
   flex: 1;
@@ -219,18 +225,15 @@ const activeCategorySlug = NAV_CATEGORIES.find(cat =>
   height: 18px;
 }
 
-/* Flèche — rotation au déploiement */
 .sidebar-cat-arrow {
   color: var(--color-text-subtle);
   transition: transform var(--duration-fast) var(--ease-out);
   flex-shrink: 0;
 }
 
-details[open] .sidebar-cat-arrow {
-  transform: rotate(90deg);
-}
+details[open] .sidebar-cat-arrow { transform: rotate(90deg); }
 
-/* ---- Items de la catégorie ---- */
+/* ---- Items ---- */
 .sidebar-items {
   list-style: none;
   margin: 0;
@@ -238,7 +241,9 @@ details[open] .sidebar-cat-arrow {
 }
 
 .sidebar-link {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 6px var(--space-4) 6px var(--space-8);
   font-size: var(--text-sm);
   color: var(--color-text-muted);
@@ -249,19 +254,20 @@ details[open] .sidebar-cat-arrow {
     background-color var(--duration-fast) var(--ease-out),
     border-color var(--duration-fast) var(--ease-out);
   line-height: var(--leading-snug);
+  cursor: pointer;
 }
 
-.sidebar-link:hover {
+a.sidebar-link:hover {
   color: var(--color-text);
   background-color: var(--color-bg-muted);
 }
 
-.sidebar-link:focus-visible {
+a.sidebar-link:focus-visible {
   outline: none;
   box-shadow: inset var(--ring);
 }
 
-/* ---- Lien actif ---- */
+/* Lien actif */
 .sidebar-link--active {
   color: var(--color-accent);
   background-color: var(--color-accent-bg);
@@ -272,6 +278,25 @@ details[open] .sidebar-cat-arrow {
 .sidebar-link--active:hover {
   color: var(--color-accent-hover);
   background-color: var(--color-accent-bg);
+}
+
+/* Fiche non disponible */
+.sidebar-link--stub {
+  color: var(--color-text-subtle);
+  cursor: default;
+  border-left-color: transparent;
+}
+
+.sidebar-stub-badge {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--color-text-subtle);
+  background-color: var(--color-bg-muted);
+  padding: 1px 4px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
 }
 
 /* ---- Pied de sidebar ---- */

@@ -1,0 +1,428 @@
+---
+/**
+ * /categories/[category] — page d'une catégorie avec cheatsheet imprimable
+ *
+ * Affiche toutes les commandes disponibles de la catégorie + les stubs.
+ * CSS @media print : mise en page A4, masque le header/sidebar/TOC/footer.
+ */
+import { getCollection } from 'astro:content';
+import DocsLayout  from '../../layouts/DocsLayout.astro';
+import Badge       from '../../components/ui/Badge.astro';
+import { NAV_CATEGORIES } from '../../lib/nav';
+
+export async function getStaticPaths() {
+  return NAV_CATEGORIES.map(cat => ({
+    params: { category: cat.slug },
+    props:  { cat },
+  }));
+}
+
+const { cat } = Astro.props;
+const { category } = Astro.params;
+
+/* Commandes disponibles dans cette catégorie */
+const availableCommands = await getCollection(
+  'commands',
+  ({ data }) => data.category === category
+);
+
+/* Mapper les items du nav avec les données de la collection */
+type AvailableCmd = (typeof availableCommands)[number];
+const cmdMap = new Map<string, AvailableCmd>(
+  availableCommands.map(cmd => [cmd.id.split('/')[1], cmd])
+);
+
+const currentPath = `/categories/${category}`;
+---
+
+<DocsLayout
+  title={cat.title}
+  description={cat.description}
+  currentPath={currentPath}
+>
+  <div class="category-page">
+
+    {/* ---- En-tête ---- */}
+    <header class="cat-header">
+      <div class="cat-header-text">
+        <p class="cat-eyebrow">Catégorie</p>
+        <h1 class="cat-title">{cat.title}</h1>
+        <p class="cat-desc">{cat.description}</p>
+        <p class="cat-stats">
+          <span class="stat-available">{availableCommands.length}</span> fiche{availableCommands.length > 1 ? 's' : ''} disponible{availableCommands.length > 1 ? 's' : ''}
+          sur <strong>{cat.commandCount}</strong> commandes
+        </p>
+      </div>
+      <button class="print-btn" onclick="window.print()" aria-label="Imprimer cette cheatsheet">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+          <rect width="12" height="8" x="6" y="14"/>
+        </svg>
+        Imprimer la cheatsheet
+      </button>
+    </header>
+
+    {/* ---- Liste des commandes ---- */}
+    <div class="cmd-cards">
+      {cat.items.map(item => {
+        const cmd = cmdMap.get(item.slug);
+        if (cmd) {
+          /* Fiche disponible */
+          return (
+            <article class="cmd-card cmd-card--available">
+              <div class="cmd-card-meta">
+                <Badge type="mode"       value={cmd.data.mode} />
+                <Badge type="difficulty" value={cmd.data.difficulty} />
+                {cmd.data.devices.map(d => <Badge type="device" value={d} />)}
+              </div>
+              <h2 class="cmd-card-title">
+                <a href={`/commands/${cmd.id}`}>{cmd.data.title}</a>
+              </h2>
+              <p class="cmd-card-desc">{cmd.data.description}</p>
+              <div class="cmd-card-syntax">
+                <span class="syntax-label">Syntaxe</span>
+                <code>{cmd.data.syntax}</code>
+              </div>
+              <div class="cmd-card-link print-hide">
+                <a href={`/commands/${cmd.id}`} class="see-full">
+                  Voir la fiche complète →
+                </a>
+              </div>
+            </article>
+          );
+        } else {
+          /* Stub — pas encore de fiche */
+          return (
+            <article class="cmd-card cmd-card--stub">
+              <div class="cmd-card-meta">
+                {item.mode && <Badge type="mode" value={item.mode} />}
+              </div>
+              <h2 class="cmd-card-title cmd-card-title--stub">{item.title}</h2>
+              <p class="cmd-card-desc cmd-card-desc--stub">Fiche en cours de rédaction.</p>
+            </article>
+          );
+        }
+      })}
+    </div>
+
+    {/* Navigation entre catégories */}
+    <nav class="cat-nav print-hide" aria-label="Autres catégories">
+      <p class="cat-nav-label">Autres catégories</p>
+      <ul class="cat-nav-list" role="list">
+        {NAV_CATEGORIES.filter(c => c.slug !== category).map(c => (
+          <li>
+            <a href={`/categories/${c.slug}`} class="cat-nav-link">
+              {c.title}
+              <span class="cat-nav-count">{c.commandCount}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+
+  </div>
+</DocsLayout>
+
+<style>
+.category-page {
+  padding: var(--space-6) 0 var(--space-12);
+}
+
+/* ---- En-tête ---- */
+.cat-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-6);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-8);
+  padding-bottom: var(--space-6);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.cat-eyebrow {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--color-accent);
+  margin: 0 0 var(--space-2) 0;
+}
+
+.cat-title {
+  font-size: var(--text-4xl);
+  font-weight: 700;
+  letter-spacing: var(--tracking-tight);
+  color: var(--color-text);
+  margin: 0 0 var(--space-2) 0;
+}
+
+.cat-desc {
+  font-size: var(--text-base);
+  color: var(--color-text-muted);
+  margin: 0 0 var(--space-3) 0;
+}
+
+.cat-stats {
+  font-size: var(--text-sm);
+  color: var(--color-text-subtle);
+  margin: 0;
+}
+
+.stat-available {
+  font-weight: 700;
+  color: var(--color-accent);
+  font-size: var(--text-lg);
+}
+
+/* ---- Bouton imprimer ---- */
+.print-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background-color: var(--color-bg-muted);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.print-btn:hover {
+  border-color: var(--color-border-strong);
+  color: var(--color-text);
+}
+
+.print-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
+/* ---- Grille de fiches ---- */
+.cmd-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-10);
+}
+
+/* ---- Carte commande ---- */
+.cmd-card {
+  padding: var(--space-4);
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.cmd-card--available {
+  border-left: 3px solid var(--color-accent);
+}
+
+.cmd-card--stub {
+  opacity: 0.55;
+  border-style: dashed;
+}
+
+.cmd-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-bottom: var(--space-2);
+}
+
+.cmd-card-title {
+  font-size: var(--text-base);
+  font-weight: 600;
+  margin: 0 0 var(--space-1) 0;
+}
+
+.cmd-card-title a {
+  color: var(--color-text);
+  text-decoration: none;
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+.cmd-card-title a:hover { color: var(--color-accent); }
+
+.cmd-card-title--stub { color: var(--color-text-muted); }
+
+.cmd-card-desc {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  line-height: var(--leading-snug);
+  margin: 0 0 var(--space-3) 0;
+}
+
+.cmd-card-desc--stub { font-style: italic; }
+
+.cmd-card-syntax {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--color-bg-subtle);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-2);
+}
+
+.syntax-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--color-text-subtle);
+  flex-shrink: 0;
+}
+
+.cmd-card-syntax code {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-accent);
+  word-break: break-all;
+}
+
+.see-full {
+  font-size: var(--text-xs);
+  color: var(--color-accent);
+  text-decoration: none;
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+.see-full:hover { text-decoration: underline; }
+
+/* ---- Navigation catégories ---- */
+.cat-nav {
+  padding-top: var(--space-8);
+  border-top: 1px solid var(--color-border);
+}
+
+.cat-nav-label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--color-text-subtle);
+  margin: 0 0 var(--space-3) 0;
+}
+
+.cat-nav-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.cat-nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  background-color: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  text-decoration: none;
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.cat-nav-link:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.cat-nav-count {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--color-text-subtle);
+  background-color: var(--color-bg-muted);
+  padding: 0 4px;
+  border-radius: var(--radius-sm);
+}
+
+/* ================================================================
+   CSS IMPRESSION — cheatsheet A4
+   ================================================================ */
+@media print {
+  /* Masquer les éléments de navigation */
+  :global(#site-header),
+  :global(#site-sidebar),
+  :global(.toc),
+  :global(.footer),
+  :global(.search-backdrop),
+  .print-hide {
+    display: none !important;
+  }
+
+  /* Mise en page A4 */
+  :global(body) {
+    font-size: 11pt;
+    margin: 0;
+    background: white;
+    color: black;
+  }
+
+  :global(.docs-wrapper) {
+    display: block;
+  }
+
+  :global(.docs-main) {
+    padding: 0;
+    max-width: 100%;
+  }
+
+  .category-page {
+    padding: 0;
+  }
+
+  /* En-tête imprimé */
+  .cat-header {
+    border-bottom: 2px solid black;
+    padding-bottom: 8pt;
+    margin-bottom: 12pt;
+  }
+
+  .cat-title { font-size: 20pt; }
+  .cat-eyebrow { display: none; }
+  .cat-stats { font-size: 9pt; }
+
+  /* Grille de fiches en 2 colonnes pour l'impression */
+  .cmd-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8pt;
+    margin-bottom: 0;
+  }
+
+  .cmd-card {
+    padding: 8pt;
+    border: 1px solid #ccc;
+    border-radius: 3pt;
+    page-break-inside: avoid;
+  }
+
+  .cmd-card--stub { display: none; } /* Masquer les stubs à l'impression */
+
+  .cmd-card-title { font-size: 11pt; }
+  .cmd-card-desc  { font-size: 9pt; }
+
+  .cmd-card-syntax {
+    background: #f5f5f5;
+    padding: 4pt 6pt;
+  }
+
+  .cmd-card-syntax code { font-size: 8pt; }
+
+  .cat-nav { display: none; }
+}
+</style>

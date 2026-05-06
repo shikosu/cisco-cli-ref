@@ -1,0 +1,327 @@
+---
+/**
+ * Page dynamique pour chaque fiche commande CLI Cisco.
+ * Route : /commands/<catégorie>/<slug>   (ex: /commands/bases/configurer-hostname)
+ */
+import { getCollection, render } from 'astro:content';
+import DocsLayout from '../../layouts/DocsLayout.astro';
+import Badge      from '../../components/ui/Badge.astro';
+import { getRelated } from '../../lib/commands';
+import { NAV_CATEGORIES } from '../../lib/nav';
+
+export async function getStaticPaths() {
+  const commands = await getCollection('commands');
+  return commands.map(entry => ({
+    params: { slug: entry.id },
+    props:  { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+const { Content, headings } = await render(entry);
+
+const { title, description, category, mode, difficulty, devices, syntax, related, examTags } = entry.data;
+
+/* Résoudre les commandes liées */
+const relatedCommands = await getRelated(related);
+
+/* Breadcrumb : trouver le titre de la catégorie */
+const catMeta = NAV_CATEGORIES.find(c => c.slug === category);
+const categoryTitle = catMeta?.title ?? category;
+
+/* Formatage de la date */
+const updatedDate = entry.data.updated.toLocaleDateString('fr-FR', {
+  year: 'numeric', month: 'long', day: 'numeric',
+});
+
+const currentPath = `/commands/${entry.id}`;
+---
+
+<DocsLayout
+  title={title}
+  description={description}
+  headings={headings}
+  currentPath={currentPath}
+>
+  <article class="command-article">
+
+    {/* ---- Breadcrumb ---- */}
+    <nav class="breadcrumb" aria-label="Fil d'Ariane">
+      <ol>
+        <li><a href="/">Accueil</a></li>
+        <li aria-hidden="true" class="breadcrumb-sep">›</li>
+        <li><a href={`/categories/${category}`}>{categoryTitle}</a></li>
+        <li aria-hidden="true" class="breadcrumb-sep">›</li>
+        <li aria-current="page">{title}</li>
+      </ol>
+    </nav>
+
+    {/* ---- En-tête de la fiche ---- */}
+    <header class="command-header">
+      <h1 class="command-title">{title}</h1>
+      <p class="command-desc">{description}</p>
+
+      {/* Badges metadata */}
+      <div class="command-badges">
+        <Badge type="mode"       value={mode} />
+        <Badge type="difficulty" value={difficulty} />
+        {devices.map(d => <Badge type="device" value={d} />)}
+        {examTags.map(tag => (
+          <span class="exam-tag">{tag}</span>
+        ))}
+      </div>
+
+      {/* Syntaxe rapide */}
+      <div class="command-syntax">
+        <span class="syntax-label">Syntaxe</span>
+        <code class="syntax-value">{syntax}</code>
+      </div>
+    </header>
+
+    {/* ---- Contenu MDX ---- */}
+    <div class="prose command-prose">
+      <Content />
+    </div>
+
+    {/* ---- Commandes liées ---- */}
+    {relatedCommands.length > 0 && (
+      <aside class="related-commands" aria-labelledby="related-heading">
+        <h2 id="related-heading" class="related-title">Voir aussi</h2>
+        <ul class="related-list" role="list">
+          {relatedCommands.map(cmd => (
+            <li>
+              {cmd.available ? (
+                <a href={cmd.href} class="related-link">
+                  {cmd.title}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                  </svg>
+                </a>
+              ) : (
+                <span class="related-link related-link--stub">
+                  {cmd.title}
+                  <span class="stub-label">bientôt</span>
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      </aside>
+    )}
+
+    {/* ---- Pied de fiche ---- */}
+    <footer class="command-footer">
+      <p class="command-updated">
+        Mis à jour le <time datetime={entry.data.updated.toISOString()}>{updatedDate}</time>
+      </p>
+      <a
+        href={`https://github.com/teovidal/cisco-cli-ref/blob/main/src/content/commands/${entry.id}.mdx`}
+        class="command-edit-link"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Suggérer une correction
+      </a>
+    </footer>
+
+  </article>
+</DocsLayout>
+
+<style>
+/* ---- Article ---- */
+.command-article {
+  padding: var(--space-6) 0 var(--space-12);
+}
+
+/* ---- Breadcrumb ---- */
+.breadcrumb ol {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  list-style: none;
+  margin: 0 0 var(--space-6) 0;
+  padding: 0;
+  font-size: var(--text-sm);
+  color: var(--color-text-subtle);
+}
+
+.breadcrumb a {
+  color: var(--color-text-muted);
+  text-decoration: none;
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+.breadcrumb a:hover { color: var(--color-accent); }
+
+.breadcrumb-sep {
+  color: var(--color-text-subtle);
+  user-select: none;
+}
+
+/* ---- En-tête ---- */
+.command-header {
+  margin-bottom: var(--space-8);
+  padding-bottom: var(--space-6);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.command-title {
+  font-size: var(--text-4xl);
+  font-weight: 700;
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
+  color: var(--color-text);
+  margin: 0 0 var(--space-3) 0;
+}
+
+.command-desc {
+  font-size: var(--text-lg);
+  color: var(--color-text-muted);
+  line-height: var(--leading-relaxed);
+  margin: 0 0 var(--space-4) 0;
+  max-width: 600px;
+}
+
+.command-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.exam-tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--color-text-subtle);
+  background-color: var(--color-bg-muted);
+  border: 1px solid var(--color-border);
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+}
+
+/* ---- Syntaxe rapide ---- */
+.command-syntax {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--color-accent);
+}
+
+.syntax-label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--color-text-subtle);
+  flex-shrink: 0;
+}
+
+.syntax-value {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--color-accent);
+  word-break: break-all;
+}
+
+/* ---- Prose (contenu MDX) ---- */
+.command-prose {
+  /* Hérite de prose.css */
+}
+
+/* ---- Commandes liées ---- */
+.related-commands {
+  margin-top: var(--space-12);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--color-border);
+}
+
+.related-title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  color: var(--color-text-subtle);
+  margin: 0 0 var(--space-4) 0;
+}
+
+.related-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.related-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--color-bg-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  text-decoration: none;
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+a.related-link:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.related-link--stub {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.stub-label {
+  font-size: var(--text-xs);
+  color: var(--color-text-subtle);
+  font-style: italic;
+}
+
+/* ---- Pied de fiche ---- */
+.command-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-8);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
+}
+
+.command-updated {
+  font-size: var(--text-xs);
+  color: var(--color-text-subtle);
+  margin: 0;
+}
+
+.command-edit-link {
+  font-size: var(--text-xs);
+  color: var(--color-text-subtle);
+  text-decoration: none;
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+.command-edit-link:hover {
+  color: var(--color-accent);
+  text-decoration: underline;
+}
+</style>

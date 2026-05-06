@@ -1,0 +1,105 @@
+---
+title: "Configurer le hostname"
+description: "Définir le nom d'hôte d'un switch ou routeur Cisco — visible dans le prompt CLI."
+category: "bases"
+mode: "config"
+syntax: "hostname <nom>"
+devices: ["switch", "router"]
+difficulty: "debutant"
+related:
+  - "bases/banner-motd"
+  - "bases/sauvegarder-config"
+  - "securite/enable-secret"
+examTags: ["bac-pro-ciel", "bts-sio"]
+updated: 2026-05-06
+---
+
+import { Badge, CliPrompt, CodeBlock, Callout, Topology, Kbd } from '@/components/ui';
+
+## En bref
+
+Le **hostname** est le nom qui s'affiche dans le prompt CLI. Le changer permet d'identifier rapidement chaque équipement dans une infra. La commande s'utilise en mode **config global**.
+
+## Syntaxe
+
+<CodeBlock lang="cisco">
+hostname &lt;nom&gt;
+</CodeBlock>
+
+- `<nom>` : 1 à 63 caractères, sans espace, casse-sensitive
+- Pas de caractère spécial sauf `-` et `_`
+
+## Exemple minimal
+
+Sur un switch que tu veux nommer **SW-Lattes-01** :
+
+<CodeBlock lang="cisco" title="Renommer un switch">
+Switch> enable
+Switch# configure terminal
+Switch(config)# hostname SW-Lattes-01
+SW-Lattes-01(config)#
+</CodeBlock>
+
+Le changement est **immédiat** dans le prompt.
+
+## Topologie
+
+<Topology>
+{`   Avant                       Après
+   ─────                       ─────
+   Switch>                     SW-Lattes-01>
+   Switch#                     SW-Lattes-01#
+   Switch(config)#             SW-Lattes-01(config)#`}
+</Topology>
+
+## Étapes détaillées
+
+**1. Passer en mode privilégié**
+
+Depuis <CliPrompt mode="user" />, tape `enable`. Si un mot de passe est défini, saisis-le.
+
+**2. Entrer en mode config global**
+
+Depuis <CliPrompt mode="privileged" />, tape `configure terminal` (ou son raccourci `conf t`).
+
+**3. Définir le hostname**
+
+Depuis <CliPrompt mode="config" />, tape `hostname` suivi du nom voulu.
+
+**4. Sauvegarder (sinon perdu au redémarrage)**
+
+<CodeBlock lang="cisco">
+SW-Lattes-01(config)# end
+SW-Lattes-01# write memory
+</CodeBlock>
+
+## Vérification
+
+<CodeBlock lang="cisco" title="Vérifier le hostname">
+SW-Lattes-01# show running-config | include hostname
+hostname SW-Lattes-01
+</CodeBlock>
+
+Ou simplement : le prompt a changé.
+
+## Pièges fréquents
+
+<Callout type="warning" title="Sensible à la casse">
+  `hostname Switch` et `hostname switch` produisent **deux prompts différents**. Choisis une convention
+  (souvent : majuscules pour les équipements, minuscules pour les hôtes Linux).
+</Callout>
+
+<Callout type="danger" title="Pas d'espace">
+  `hostname SW Lattes 01` provoquera une erreur. Utilise `-` ou `_` à la place.
+</Callout>
+
+<Callout type="tip" title="Convention de nommage">
+  Une bonne convention : `TYPE-SITE-N°`. Ex : `RTR-SIEGE-01`, `SW-LATTES-03`.
+  Ça facilite la lecture des `show cdp neighbors`.
+</Callout>
+
+## Voir aussi
+
+- [Configurer le banner MOTD](/commands/bases/banner-motd)
+- [Sauvegarder la configuration](/commands/bases/sauvegarder-config)
+- [Définir un mot de passe enable](/commands/securite/enable-secret)

@@ -1,0 +1,140 @@
+---
+title: "Créer un VLAN"
+description: "Définir un VLAN sur un switch Cisco et lui donner un nom — base de toute segmentation L2."
+category: "switching"
+mode: "config-vlan"
+syntax: "vlan <id> + name <nom>"
+devices: ["switch"]
+difficulty: "debutant"
+related:
+  - "switching/attribuer-port-vlan"
+  - "switching/configurer-trunk"
+  - "diagnostic/show-vlan"
+examTags: ["bac-pro-ciel", "bts-sio", "but-rt"]
+updated: 2026-05-06
+---
+
+import { Badge, CliPrompt, CodeBlock, Callout, Topology, Kbd } from '@/components/ui';
+
+## En bref
+
+Un **VLAN** (Virtual LAN) segmente un switch en plusieurs réseaux logiques indépendants.
+Créer un VLAN, c'est lui donner un **ID** (1–4094) et un **nom** lisible pour l'identifier dans les commandes `show`.
+
+## Syntaxe
+
+<CodeBlock lang="cisco">
+vlan &lt;id&gt;
+ name &lt;nom&gt;
+</CodeBlock>
+
+- `<id>` : entier entre 1 et 4094 (le 1 et 1002–1005 sont réservés)
+- `<nom>` : 32 caractères max, sans espace
+
+## Exemple minimal
+
+Créer le VLAN 10 nommé **Eleves** sur un switch :
+
+<CodeBlock lang="cisco" title="Créer VLAN 10">
+Switch> enable
+Switch# configure terminal
+Switch(config)# vlan 10
+Switch(config-vlan)# name Eleves
+Switch(config-vlan)# exit
+Switch(config)# end
+Switch# write memory
+</CodeBlock>
+
+## Topologie
+
+<Topology>
+{`              ┌──────────────────────────┐
+              │         SW1              │
+              │                          │
+              │  VLAN 10 ── Eleves       │
+              │  VLAN 20 ── Profs        │
+              │  VLAN 30 ── Admin        │
+              │                          │
+              └──────────────────────────┘
+                  Un switch, 3 VLAN logiques`}
+</Topology>
+
+## Étapes détaillées
+
+**1. Passer en mode privilégié puis config**
+
+<CodeBlock lang="cisco">
+Switch> enable
+Switch# configure terminal
+</CodeBlock>
+
+**2. Créer le VLAN**
+
+Depuis <CliPrompt mode="config" />, tape `vlan <id>`. Le prompt passe en mode `config-vlan`.
+
+<CodeBlock lang="cisco">
+Switch(config)# vlan 10
+Switch(config-vlan)#
+</CodeBlock>
+
+**3. Nommer le VLAN**
+
+Depuis <CliPrompt mode="config-vlan" />, donne un nom descriptif :
+
+<CodeBlock lang="cisco">
+Switch(config-vlan)# name Eleves
+</CodeBlock>
+
+**4. Créer plusieurs VLAN d'un coup**
+
+<CodeBlock lang="cisco" title="Créer 3 VLAN">
+Switch(config)# vlan 10
+Switch(config-vlan)# name Eleves
+Switch(config-vlan)# exit
+Switch(config)# vlan 20
+Switch(config-vlan)# name Profs
+Switch(config-vlan)# exit
+Switch(config)# vlan 30
+Switch(config-vlan)# name Admin
+Switch(config-vlan)# end
+Switch# write memory
+</CodeBlock>
+
+## Vérification
+
+<CodeBlock lang="cisco" title="Vérifier les VLAN créés">
+Switch# show vlan brief
+
+VLAN Name                             Status    Ports
+---- -------------------------------- --------- ---------------
+1    default                          active    Fa0/1, Fa0/2
+10   Eleves                           active
+20   Profs                            active
+30   Admin                            active
+1002 fddi-default                     act/unsup
+</CodeBlock>
+
+Le VLAN apparaît, mais **aucun port n'y est encore associé** — c'est l'étape suivante.
+
+## Pièges fréquents
+
+<Callout type="warning" title="Le VLAN existe mais ne fait rien">
+  Créer un VLAN ne fait que le déclarer. Pour qu'il serve à quelque chose, il faut
+  **attribuer des ports** ou le **transporter sur un trunk**.
+</Callout>
+
+<Callout type="danger" title="Évite le VLAN 1">
+  Le VLAN 1 est le VLAN par défaut, présent partout. Pour la sécurité, on
+  **ne** met jamais d'utilisateurs dedans. Crée toujours des VLAN dédiés (10, 20, 30…).
+</Callout>
+
+<Callout type="tip" title="Convention de numérotation">
+  Convention courante : VLAN 10/20/30 pour les usages, VLAN 99 pour le management,
+  VLAN 999 pour les ports désactivés.
+</Callout>
+
+## Voir aussi
+
+- [Attribuer un port à un VLAN](/commands/switching/attribuer-port-vlan)
+- [Configurer un trunk](/commands/switching/configurer-trunk)
+- [Vérifier les VLAN avec show vlan](/commands/diagnostic/show-vlan)
