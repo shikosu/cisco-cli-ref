@@ -8,11 +8,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 let pf: any = null;
 
-/** Charge et initialise Pagefind une seule fois. Retourne false si indisponible. */
+/** Charge et initialise Pagefind une seule fois. Retourne false si indisponible.
+ *
+ * new Function contourne l'analyse statique de Vite/Rollup :
+ * le fichier n'existe que dans dist/ après le build, pas en dev.
+ */
 export async function initSearch(): Promise<boolean> {
   if (pf) return true;
   try {
-    pf = await import(/* @vite-ignore */ '/pagefind/pagefind.js');
+    const load = new Function('u', 'return import(u)') as (u: string) => Promise<any>;
+    pf = await load('/pagefind/pagefind.js');
     await pf.init();
     return true;
   } catch {
