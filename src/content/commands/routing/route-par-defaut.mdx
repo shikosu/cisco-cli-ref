@@ -1,0 +1,130 @@
+---
+title: "Route par défaut"
+description: "Configurer la route par défaut (gateway of last resort) sur un routeur Cisco — toutes les destinations inconnues via une seule route."
+category: "routing"
+mode: "config"
+syntax: "ip route 0.0.0.0 0.0.0.0 <next-hop>"
+devices: ["router"]
+difficulty: "intermediaire"
+related:
+  - "routing/route-statique"
+  - "routing/configurer-interface"
+  - "diagnostic/show-ip-interface-brief"
+examTags: ["bac-pro-ciel", "bts-sio", "but-rt"]
+updated: 2026-05-06
+---
+
+import { Badge, CliPrompt, CodeBlock, Callout, Topology, Kbd } from '@/components/ui';
+
+## En bref
+
+La **route par défaut** (ou *gateway of last resort*) est une route qui correspond à **toute destination** non connue explicitement. C'est la route vers Internet ou vers le FAI. Sans elle, un routeur envoie un `ICMP Destination Unreachable` pour tous les paquets vers des réseaux inconnus.
+
+## Syntaxe
+
+<CodeBlock lang="cisco">
+ip route 0.0.0.0 0.0.0.0 &lt;next-hop&gt;
+</CodeBlock>
+
+- `0.0.0.0 0.0.0.0` : correspond à n'importe quelle destination (masque le plus court)
+- `<next-hop>` : IP du prochain routeur (ex : routeur du FAI)
+
+## Exemple minimal
+
+Envoyer tout le trafic inconnu vers le FAI (`203.0.113.1`) :
+
+<CodeBlock lang="cisco" title="Route par défaut vers le FAI">
+Router> enable
+Router# configure terminal
+Router(config)# ip route 0.0.0.0 0.0.0.0 203.0.113.1
+Router(config)# end
+Router# write memory
+</CodeBlock>
+
+## Topologie
+
+<Topology>
+{`   LAN (192.168.1.0/24)
+         │
+   Router [Gi0/0: 192.168.1.254]
+          [Gi0/1: 203.0.113.2] ──── FAI (203.0.113.1) ──── Internet
+
+   ip route 0.0.0.0 0.0.0.0 203.0.113.1
+   ↑ "Pour tout ce que je ne connais pas, envoie vers le FAI"`}
+</Topology>
+
+## Étapes détaillées
+
+**1. Configurer l'interface WAN**
+
+L'interface vers le FAI doit d'abord avoir une IP et être active :
+
+<CodeBlock lang="cisco">
+Router(config)# interface gigabitethernet 0/1
+Router(config-if)# ip address 203.0.113.2 255.255.255.252
+Router(config-if)# no shutdown
+Router(config-if)# exit
+</CodeBlock>
+
+**2. Ajouter la route par défaut**
+
+Depuis <CliPrompt mode="config" /> :
+
+<CodeBlock lang="cisco">
+Router(config)# ip route 0.0.0.0 0.0.0.0 203.0.113.1
+</CodeBlock>
+
+**3. Propager la route vers les autres routeurs (OSPF, optionnel)**
+
+<CodeBlock lang="cisco">
+Router(config)# router ospf 1
+Router(config-router)# default-information originate
+</CodeBlock>
+
+Injecte la route par défaut dans le domaine OSPF pour que les autres routeurs l'apprennent automatiquement.
+
+## Vérification
+
+<CodeBlock lang="cisco" title="Vérifier la table de routage">
+Router# show ip route
+
+Gateway of last resort is 203.0.113.1 to network 0.0.0.0
+
+C    192.168.1.0/24 is directly connected, GigabitEthernet0/0
+C    203.0.113.0/30 is directly connected, GigabitEthernet0/1
+S*   0.0.0.0/0 [1/0] via 203.0.113.1
+</CodeBlock>
+
+`S*` = route statique candidate comme gateway of last resort.
+`Gateway of last resort is 203.0.113.1` confirme que la route est active.
+
+<CodeBlock lang="cisco" title="Tester la connectivité">
+Router# ping 8.8.8.8
+!!!!!
+Success rate is 100 percent (5/5)
+</CodeBlock>
+
+## Pièges fréquents
+
+<Callout type="warning" title="Priorité de la route la plus spécifique">
+  La route par défaut a le masque le plus court (`/0`) et est donc toujours moins
+  prioritaire qu'une route plus spécifique. Ex : `192.168.2.0/24` est préférée à
+  `0.0.0.0/0` pour un paquet vers 192.168.2.1.
+</Callout>
+
+<Callout type="danger" title="Boucle de routage">
+  Si deux routeurs se pointent l'un vers l'autre comme gateway of last resort,
+  les paquets inconnus tournent en boucle jusqu'au TTL=0. La route par défaut doit
+  pointer vers un routeur qui **sait** où aller (le FAI, pas un pair).
+</Callout>
+
+<Callout type="tip" title="Sur un switch L3">
+  Sur un switch L3 avec `ip routing` désactivé, utilise `ip default-gateway <ip>`.
+  Avec `ip routing` activé, `ip route 0.0.0.0 0.0.0.0 <ip>` fonctionne normalement.
+</Callout>
+
+## Voir aussi
+
+- [Route statique](/commands/routing/route-statique)
+- [Configurer une interface](/commands/routing/configurer-interface)
+- [show ip interface brief](/commands/diagnostic/show-ip-interface-brief)

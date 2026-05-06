@@ -1,0 +1,124 @@
+---
+title: "Sauvegarder la configuration"
+description: "Enregistrer la configuration courante en NVRAM — indispensable pour qu'elle survive au redémarrage."
+category: "bases"
+mode: "privileged"
+syntax: "write memory | copy running-config startup-config"
+devices: ["switch", "router"]
+difficulty: "debutant"
+related:
+  - "bases/configurer-hostname"
+  - "diagnostic/show-running-config"
+  - "securite/enable-secret"
+examTags: ["bac-pro-ciel", "bts-sio"]
+updated: 2026-05-06
+---
+
+import { Badge, CliPrompt, CodeBlock, Callout, Topology, Kbd } from '@/components/ui';
+
+## En bref
+
+Cisco IOS distingue deux configurations : la **running-config** (en RAM, active) et la **startup-config** (en NVRAM, chargée au démarrage). Si tu ne sauvegardes pas, tout est perdu au prochain redémarrage.
+
+## Syntaxe
+
+Deux formes équivalentes :
+
+<CodeBlock lang="cisco">
+write memory
+</CodeBlock>
+
+<CodeBlock lang="cisco">
+copy running-config startup-config
+</CodeBlock>
+
+## Exemple minimal
+
+<CodeBlock lang="cisco" title="Sauvegarder après configuration">
+SW-Lattes-01# write memory
+Building configuration...
+[OK]
+SW-Lattes-01#
+</CodeBlock>
+
+## Topologie des mémoires
+
+<Topology>
+{`   RAM (volatile)            NVRAM (persistante)
+   ──────────────            ──────────────────
+   running-config   ──►      startup-config
+   (actif, modifiable)       (chargé au boot)
+
+   write memory = copie running → startup`}
+</Topology>
+
+## Étapes détaillées
+
+**1. Faire la configuration souhaitée**
+
+Hostname, VLANs, mots de passe, interfaces… tout ce que tu as configuré est dans la **running-config** en RAM.
+
+**2. Vérifier que tout est correct**
+
+Avant de sauvegarder, vérifie :
+
+<CodeBlock lang="cisco">
+SW-Lattes-01# show running-config
+</CodeBlock>
+
+**3. Sauvegarder**
+
+Depuis <CliPrompt mode="privileged" /> :
+
+<CodeBlock lang="cisco">
+SW-Lattes-01# write memory
+Building configuration...
+[OK]
+</CodeBlock>
+
+Ou la forme longue (même résultat) :
+
+<CodeBlock lang="cisco">
+SW-Lattes-01# copy running-config startup-config
+Destination filename [startup-config]?
+Building configuration...
+[OK]
+</CodeBlock>
+
+Appuie sur <Kbd>↵</Kbd> pour confirmer le nom du fichier de destination (déjà rempli).
+
+## Vérification
+
+<CodeBlock lang="cisco" title="Afficher la startup-config sauvegardée">
+SW-Lattes-01# show startup-config
+Using 1285 bytes
+!
+version 15.2
+hostname SW-Lattes-01
+...
+</CodeBlock>
+
+Si la startup-config correspond à la running-config, la sauvegarde est réussie.
+
+## Pièges fréquents
+
+<Callout type="danger" title="Redémarrage sans sauvegarde = perte totale">
+  Un `reload` sans avoir fait `write memory` recharge la startup-config — soit une version
+  antérieure, soit une config vide. Tout ce que tu viens de faire disparaît.
+</Callout>
+
+<Callout type="warning" title="write seul ne suffit pas">
+  `write` seul (sans `memory`) affiche une aide dans certaines versions IOS. La commande
+  correcte est bien `write memory` ou son raccourci `wr`.
+</Callout>
+
+<Callout type="tip" title="Bonne habitude en TP">
+  Prends l'habitude de faire `wr` après chaque bloc de configuration valide.
+  Ça évite de tout refaire si le simulateur plante ou si l'équipement redémarre.
+</Callout>
+
+## Voir aussi
+
+- [Afficher la configuration](/commands/diagnostic/show-running-config)
+- [Configurer le hostname](/commands/bases/configurer-hostname)
+- [Définir un mot de passe enable](/commands/securite/enable-secret)

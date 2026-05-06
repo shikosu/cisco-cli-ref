@@ -1,0 +1,135 @@
+---
+title: "Ping"
+description: "Tester la connectivité réseau avec ping sur Cisco IOS — interpréter les résultats et utiliser le ping étendu."
+category: "diagnostic"
+mode: "privileged"
+syntax: "ping <ip-destination>"
+devices: ["switch", "router"]
+difficulty: "debutant"
+related:
+  - "diagnostic/show-ip-interface-brief"
+  - "diagnostic/show-running-config"
+  - "routing/configurer-interface"
+examTags: ["bac-pro-ciel", "bts-sio"]
+updated: 2026-05-06
+---
+
+import { Badge, CliPrompt, CodeBlock, Callout, Topology, Kbd } from '@/components/ui';
+
+## En bref
+
+`ping` envoie des paquets **ICMP Echo Request** et attend des **ICMP Echo Reply**. C'est le test de connectivité de base : si le ping passe, la route et les interfaces sont configurées correctement dans les deux sens. Sur Cisco IOS, le mode privilégié offre des options supplémentaires (**ping étendu**).
+
+## Syntaxe
+
+<CodeBlock lang="cisco">
+ping &lt;ip-destination&gt;
+</CodeBlock>
+
+Ou ping étendu (interactif) :
+
+<CodeBlock lang="cisco">
+ping
+</CodeBlock>
+
+## Exemple minimal
+
+<CodeBlock lang="cisco" title="Ping simple vers 192.168.2.1">
+Router# ping 192.168.2.1
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 192.168.2.1, timeout is 2 seconds:
+!!!!!
+Success rate is 100 percent (5/5), round-trip min/avg/max = 1/1/2 ms
+</CodeBlock>
+
+## Lecture des symboles
+
+| Symbole | Signification | Cause probable |
+|---------|--------------|----------------|
+| `!` | Echo reply reçu | ✅ Connectivité OK |
+| `.` | Timeout (pas de réponse) | Route manquante, interface down, ACL bloquante |
+| `U` | Destination unreachable | Route existe mais hôte inaccessible (ICMP Unreachable) |
+| `N` | Network unreachable | Le réseau de destination n'existe pas |
+| `?` | Unknown packet type | — |
+
+## Étapes détaillées
+
+**1. Ping depuis le mode privilégié**
+
+Depuis <CliPrompt mode="privileged" /> :
+
+<CodeBlock lang="cisco">
+Router# ping 192.168.1.1
+</CodeBlock>
+
+**2. Augmenter le nombre de paquets pour un test plus fiable**
+
+<CodeBlock lang="cisco" title="100 paquets">
+Router# ping 192.168.1.1 repeat 100
+</CodeBlock>
+
+**3. Ping depuis une interface spécifique**
+
+<CodeBlock lang="cisco" title="Choisir l'interface source">
+Router# ping 192.168.2.1 source gigabitethernet 0/0
+</CodeBlock>
+
+Utile pour vérifier qu'une interface spécifique peut atteindre une destination.
+
+**4. Ping étendu interactif**
+
+<CodeBlock lang="cisco" title="Mode interactif — appuie Entrée pour les valeurs par défaut">
+Router# ping
+Protocol [ip]:
+Target IP address: 192.168.2.1
+Repeat count [5]: 10
+Datagram size [100]: 1000
+Timeout in seconds [2]:
+Extended commands [n]:
+Type escape sequence to abort.
+Sending 10, 1000-byte ICMP Echos to 192.168.2.1, timeout is 2 seconds:
+!!!!!!!!!!
+Success rate is 100 percent (10/10)
+</CodeBlock>
+
+## Diagnostic en cascade
+
+Pour isoler un problème, ping par étapes :
+
+<CodeBlock lang="cisco" title="Méthode de diagnostic progressif">
+Router# ping 127.0.0.1
+Router# ping 192.168.1.254
+Router# ping 10.0.0.2
+Router# ping 192.168.2.1
+</CodeBlock>
+
+1. `127.0.0.1` (loopback) → valide la pile IP locale
+2. Sa propre IP → valide l'interface
+3. L'IP du next-hop → valide le lien WAN
+4. L'IP de destination finale → valide la route complète
+
+Le premier `.` indique où le problème se situe.
+
+## Pièges fréquents
+
+<Callout type="warning" title="Premier ping avec un point (.)">
+  Le premier ping peut échouer (`.!!!!`) à cause de la résolution ARP.
+  Le routeur doit d'abord résoudre l'adresse MAC du next-hop. C'est normal —
+  les 4 suivants passent.
+</Callout>
+
+<Callout type="warning" title="Ping limité depuis le mode user (>)">
+  Depuis le mode user (<CliPrompt mode="user" />), le ping est restreint : pas de
+  source fixable, pas d'options. Utilise toujours le mode privilégié pour les diagnostics.
+</Callout>
+
+<Callout type="danger" title="Ping OK ≠ application fonctionnelle">
+  Un ping réussi prouve que ICMP passe. Une ACL peut bloquer TCP/UDP tout en laissant
+  passer ICMP. Si le ping fonctionne mais que l'application non, vérifie les ACL.
+</Callout>
+
+## Voir aussi
+
+- [show ip interface brief](/commands/diagnostic/show-ip-interface-brief)
+- [show running-config](/commands/diagnostic/show-running-config)
+- [Configurer une interface](/commands/routing/configurer-interface)

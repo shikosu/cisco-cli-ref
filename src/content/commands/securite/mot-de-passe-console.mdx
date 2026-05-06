@@ -1,0 +1,111 @@
+---
+title: "Mot de passe console"
+description: "Protéger l'accès physique console d'un switch ou routeur Cisco par un mot de passe — accès local obligatoire en prod."
+category: "securite"
+mode: "config-line"
+syntax: "line console 0 + password <pass> + login"
+devices: ["switch", "router"]
+difficulty: "debutant"
+related:
+  - "securite/enable-secret"
+  - "securite/mot-de-passe-vty"
+  - "bases/modes-cli"
+examTags: ["bac-pro-ciel", "bts-sio", "bts-cyber"]
+updated: 2026-05-06
+---
+
+import { Badge, CliPrompt, CodeBlock, Callout, Topology, Kbd } from '@/components/ui';
+
+## En bref
+
+Le **port console** est l'accès physique de secours (câble RJ45/USB-serial). Sans mot de passe console, quiconque branche un câble console peut configurer l'équipement. La séquence est : entrer dans `line console 0`, définir le mot de passe, puis activer le contrôle avec `login`.
+
+## Syntaxe
+
+<CodeBlock lang="cisco">
+line console 0
+ password &lt;mot-de-passe&gt;
+ login
+</CodeBlock>
+
+- `line console 0` : il n'y a toujours qu'une seule console (toujours `0`)
+- `password` : définit le mot de passe
+- `login` : **obligatoire** pour activer la demande du mot de passe
+
+## Exemple minimal
+
+<CodeBlock lang="cisco" title="Protéger la console">
+Switch> enable
+Switch# configure terminal
+Switch(config)# line console 0
+Switch(config-line)# password Console1!
+Switch(config-line)# login
+Switch(config-line)# end
+Switch# write memory
+</CodeBlock>
+
+## Étapes détaillées
+
+**1. Passer en config de la ligne console**
+
+Depuis <CliPrompt mode="config" /> :
+
+<CodeBlock lang="cisco">
+Switch(config)# line console 0
+Switch(config-line)#
+</CodeBlock>
+
+**2. Définir le mot de passe**
+
+<CodeBlock lang="cisco">
+Switch(config-line)# password Console1!
+</CodeBlock>
+
+**3. Activer la vérification du mot de passe**
+
+<CodeBlock lang="cisco">
+Switch(config-line)# login
+</CodeBlock>
+
+Sans `login`, le mot de passe est défini mais **jamais demandé**.
+
+**4. Configurer le timeout (optionnel)**
+
+<CodeBlock lang="cisco">
+Switch(config-line)# exec-timeout 5 0
+</CodeBlock>
+
+Déconnecte automatiquement après 5 minutes d'inactivité. `0 0` désactive le timeout (déconseillé en prod).
+
+## Vérification
+
+<CodeBlock lang="cisco" title="Vérifier la config console">
+Switch# show running-config | section line console
+line console 0
+ exec-timeout 5 0
+ password Console1!
+ login
+</CodeBlock>
+
+## Pièges fréquents
+
+<Callout type="danger" title="login absent = mot de passe ignoré">
+  Si tu définis `password` mais oublies `login`, le mot de passe n'est jamais demandé.
+  La console reste accessible sans authentification.
+</Callout>
+
+<Callout type="warning" title="Mot de passe en clair dans la config">
+  `password` stocke le mot de passe **en clair** dans la running-config.
+  Pour le chiffrer, ajoute `service password-encryption` en config global.
+</Callout>
+
+<Callout type="tip" title="login local pour comptes nommés">
+  En prod, on préfère `login local` (avec des comptes `username <nom> password <pass>`)
+  plutôt que `login` avec un mot de passe partagé — ça permet de tracer qui se connecte.
+</Callout>
+
+## Voir aussi
+
+- [Mot de passe enable](/commands/securite/enable-secret)
+- [Mot de passe VTY (Telnet)](/commands/securite/mot-de-passe-vty)
+- [Les modes CLI](/commands/bases/modes-cli)

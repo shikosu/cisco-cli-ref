@@ -1,0 +1,142 @@
+---
+title: "Attribuer un port à un VLAN"
+description: "Configurer un port en mode access et l'assigner à un VLAN sur un switch Cisco — segmentation L2 essentielle."
+category: "switching"
+mode: "config-if"
+syntax: "switchport mode access + switchport access vlan <id>"
+devices: ["switch"]
+difficulty: "debutant"
+related:
+  - "switching/creer-vlan"
+  - "switching/configurer-trunk"
+  - "diagnostic/show-running-config"
+examTags: ["bac-pro-ciel", "bts-sio", "but-rt"]
+updated: 2026-05-06
+---
+
+import { Badge, CliPrompt, CodeBlock, Callout, Topology, Kbd } from '@/components/ui';
+
+## En bref
+
+Un port **access** transporte un seul VLAN non taggé — c'est le mode des ports connectés aux postes utilisateurs, imprimantes, serveurs. Une fois le VLAN créé, il faut l'assigner à un ou plusieurs ports pour que les machines dans ce VLAN puissent communiquer entre elles.
+
+## Syntaxe
+
+<CodeBlock lang="cisco">
+interface fastethernet &lt;num&gt;
+ switchport mode access
+ switchport access vlan &lt;id&gt;
+</CodeBlock>
+
+- `switchport mode access` : force le port en mode access (non-trunk)
+- `switchport access vlan <id>` : assigne le port au VLAN spécifié
+
+## Exemple minimal
+
+Assigner le port `Fa0/2` au VLAN 10 (Eleves) :
+
+<CodeBlock lang="cisco" title="Assigner Fa0/2 au VLAN 10">
+Switch> enable
+Switch# configure terminal
+Switch(config)# interface fastethernet 0/2
+Switch(config-if)# switchport mode access
+Switch(config-if)# switchport access vlan 10
+Switch(config-if)# end
+Switch# write memory
+</CodeBlock>
+
+## Topologie
+
+<Topology>
+{`   SW1   ┌─────────────────────────────────────┐
+         │ Fa0/1 (VLAN 1)  ── PC-Admin        │
+         │ Fa0/2 (VLAN 10) ── PC-Eleve-01     │
+         │ Fa0/3 (VLAN 10) ── PC-Eleve-02     │
+         │ Fa0/4 (VLAN 20) ── PC-Prof-01      │
+         │ Fa0/24 (trunk)  ── Vers SW2        │
+         └─────────────────────────────────────┘`}
+</Topology>
+
+## Étapes détaillées
+
+**1. Vérifier que le VLAN existe**
+
+<CodeBlock lang="cisco">
+Switch# show vlan brief
+</CodeBlock>
+
+Le VLAN doit exister avant d'assigner un port.
+
+**2. Entrer dans la config de l'interface**
+
+Depuis <CliPrompt mode="config" /> :
+
+<CodeBlock lang="cisco">
+Switch(config)# interface fastethernet 0/2
+Switch(config-if)#
+</CodeBlock>
+
+**3. Forcer le mode access**
+
+<CodeBlock lang="cisco">
+Switch(config-if)# switchport mode access
+</CodeBlock>
+
+**4. Assigner le VLAN**
+
+<CodeBlock lang="cisco">
+Switch(config-if)# switchport access vlan 10
+</CodeBlock>
+
+**5. Assigner plusieurs ports d'un coup avec interface range**
+
+<CodeBlock lang="cisco" title="Assigner Fa0/2 à Fa0/10 au VLAN 10">
+Switch(config)# interface range fastethernet 0/2 - 10
+Switch(config-if-range)# switchport mode access
+Switch(config-if-range)# switchport access vlan 10
+Switch(config-if-range)# end
+</CodeBlock>
+
+## Vérification
+
+<CodeBlock lang="cisco" title="Vérifier les ports par VLAN">
+Switch# show vlan brief
+
+VLAN Name                             Status    Ports
+---- -------------------------------- --------- ---------------
+1    default                          active    Fa0/1, Fa0/11-24
+10   Eleves                           active    Fa0/2, Fa0/3
+20   Profs                            active    Fa0/4
+</CodeBlock>
+
+<CodeBlock lang="cisco" title="Vérifier un port spécifique">
+Switch# show interfaces fastethernet 0/2 switchport
+Name: Fa0/2
+Switchport: Enabled
+Administrative Mode: static access
+Operational Mode: static access
+Access Mode VLAN: 10 (Eleves)
+</CodeBlock>
+
+## Pièges fréquents
+
+<Callout type="danger" title="VLAN non créé = VLAN inactif">
+  Si le VLAN n'a pas été créé avec `vlan <id>`, Cisco IOS peut accepter la commande
+  mais le VLAN restera inactif. Crée toujours le VLAN avant d'assigner des ports.
+</Callout>
+
+<Callout type="warning" title="Ports laissés en VLAN 1">
+  Tout port non configuré reste en VLAN 1. Par sécurité, assigne **tous** les ports à
+  un VLAN dédié, même les ports inutilisés (VLAN "poubelle" 999 + `shutdown`).
+</Callout>
+
+<Callout type="tip" title="interface range pour gagner du temps">
+  `interface range fa0/1 - 12` configure plusieurs ports en une seule commande.
+  Très utile pour les TP avec beaucoup de ports à configurer.
+</Callout>
+
+## Voir aussi
+
+- [Créer un VLAN](/commands/switching/creer-vlan)
+- [Configurer un trunk](/commands/switching/configurer-trunk)
+- [Vérifier la configuration](/commands/diagnostic/show-running-config)

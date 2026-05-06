@@ -1,0 +1,139 @@
+---
+title: "Configurer un trunk (802.1Q)"
+description: "Configurer un port trunk entre deux switches Cisco pour transporter plusieurs VLAN — protocole 802.1Q."
+category: "switching"
+mode: "config-if"
+syntax: "switchport mode trunk + switchport trunk allowed vlan"
+devices: ["switch"]
+difficulty: "intermediaire"
+related:
+  - "switching/creer-vlan"
+  - "switching/attribuer-port-vlan"
+  - "routing/configurer-interface"
+examTags: ["bac-pro-ciel", "bts-sio", "but-rt"]
+updated: 2026-05-06
+---
+
+import { Badge, CliPrompt, CodeBlock, Callout, Topology, Kbd } from '@/components/ui';
+
+## En bref
+
+Un **trunk** est un lien entre deux équipements (switch-switch ou switch-routeur) qui transporte plusieurs VLAN simultanément. Les trames sont **taguées** avec leur VLAN ID selon la norme **802.1Q**. Indispensable pour propager les VLAN dans une infrastructure multi-switches.
+
+## Syntaxe
+
+<CodeBlock lang="cisco">
+interface fastethernet &lt;num&gt;
+ switchport mode trunk
+ switchport trunk allowed vlan &lt;liste&gt;
+</CodeBlock>
+
+- `switchport mode trunk` : force le port en mode trunk permanent
+- `switchport trunk allowed vlan` : filtre les VLAN autorisés (optionnel, tous par défaut)
+
+## Exemple minimal
+
+Configurer `Fa0/24` en trunk entre SW1 et SW2 :
+
+<CodeBlock lang="cisco" title="Configurer le port Fa0/24 en trunk">
+Switch> enable
+Switch# configure terminal
+Switch(config)# interface fastethernet 0/24
+Switch(config-if)# switchport mode trunk
+Switch(config-if)# end
+Switch# write memory
+</CodeBlock>
+
+## Topologie
+
+<Topology>
+{`           VLAN 10 (Eleves)
+           VLAN 20 (Profs)
+           VLAN 30 (Admin)
+                │
+   SW1 ─────[Fa0/24 TRUNK]───── SW2
+   │                              │
+   Fa0/1-12  (VLAN 10)          Fa0/1-12 (VLAN 10)
+   Fa0/13-23 (VLAN 20)          Fa0/13-23 (VLAN 20)`}
+</Topology>
+
+## Étapes détaillées
+
+**1. Identifier le port d'interconnexion**
+
+En général, ce sont les ports de plus haute vitesse (Gi0/1, Fa0/24, etc.).
+
+**2. Configurer le trunk sur SW1**
+
+Depuis <CliPrompt mode="config" /> :
+
+<CodeBlock lang="cisco">
+SW1(config)# interface fastethernet 0/24
+SW1(config-if)# switchport mode trunk
+SW1(config-if)# end
+</CodeBlock>
+
+**3. Configurer le trunk sur SW2**
+
+<CodeBlock lang="cisco">
+SW2(config)# interface fastethernet 0/24
+SW2(config-if)# switchport mode trunk
+SW2(config-if)# end
+</CodeBlock>
+
+Les deux ports **doivent être configurés** en trunk pour que ça fonctionne.
+
+**4. Limiter les VLAN transportés (recommandé)**
+
+<CodeBlock lang="cisco" title="N'autoriser que les VLAN 10, 20 et 30">
+SW1(config-if)# switchport trunk allowed vlan 10,20,30
+</CodeBlock>
+
+Réduire la liste des VLAN autorisés limite l'exposition et les broadcast inutiles.
+
+## Vérification
+
+<CodeBlock lang="cisco" title="Vérifier le statut des trunks">
+SW1# show interfaces trunk
+
+Port        Mode         Encapsulation  Status        Native vlan
+Fa0/24      on           802.1q         trunking      1
+
+Port        Vlans allowed on trunk
+Fa0/24      10,20,30
+
+Port        Vlans allowed and active in management domain
+Fa0/24      10,20,30
+</CodeBlock>
+
+<CodeBlock lang="cisco" title="Vérifier un port spécifique">
+SW1# show interfaces fastethernet 0/24 switchport
+Administrative Mode: trunk
+Operational Mode: trunk
+Trunking VLANs Enabled: 10,20,30
+</CodeBlock>
+
+## Pièges fréquents
+
+<Callout type="danger" title="Native VLAN mismatch">
+  Le **native VLAN** doit être identique des deux côtés du trunk (VLAN 1 par défaut).
+  Si différent, les trames non-taguées sont perdues et CDP affiche un warning.
+  Pour changer : `switchport trunk native vlan <id>` (identique des deux côtés).
+</Callout>
+
+<Callout type="warning" title="DTP (Dynamic Trunking Protocol)">
+  Par défaut, Cisco tente de négocier le trunk via DTP. `switchport mode trunk`
+  force le trunk côté local mais DTP envoie encore des trames.
+  Pour désactiver totalement DTP : `switchport nonegotiate`.
+</Callout>
+
+<Callout type="tip" title="Trunk vers un routeur (Router-on-a-Stick)">
+  Pour router entre VLAN avec un seul routeur, connecte un port trunk au routeur et
+  crée des sous-interfaces : `interface g0/0.10` + `encapsulation dot1Q 10` + une IP par VLAN.
+</Callout>
+
+## Voir aussi
+
+- [Créer un VLAN](/commands/switching/creer-vlan)
+- [Attribuer un port à un VLAN](/commands/switching/attribuer-port-vlan)
+- [Configurer une interface routeur](/commands/routing/configurer-interface)

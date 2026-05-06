@@ -1,0 +1,143 @@
+---
+title: "Route statique"
+description: "Configurer une route statique sur un routeur Cisco pour atteindre un réseau distant — base du routage manuel."
+category: "routing"
+mode: "config"
+syntax: "ip route <réseau> <masque> <next-hop>"
+devices: ["router"]
+difficulty: "intermediaire"
+related:
+  - "routing/route-par-defaut"
+  - "routing/configurer-interface"
+  - "diagnostic/show-ip-interface-brief"
+examTags: ["bac-pro-ciel", "bts-sio", "but-rt"]
+updated: 2026-05-06
+---
+
+import { Badge, CliPrompt, CodeBlock, Callout, Topology, Kbd } from '@/components/ui';
+
+## En bref
+
+Une **route statique** indique manuellement au routeur comment atteindre un réseau distant. Contrairement aux protocoles dynamiques (OSPF, RIP), elle ne s'adapte pas aux pannes — mais elle est simple, prévisible, et parfaite pour les petits réseaux ou les TP.
+
+## Syntaxe
+
+Deux formes possibles :
+
+<CodeBlock lang="cisco">
+ip route &lt;réseau-dest&gt; &lt;masque&gt; &lt;ip-next-hop&gt;
+</CodeBlock>
+
+<CodeBlock lang="cisco">
+ip route &lt;réseau-dest&gt; &lt;masque&gt; &lt;interface-de-sortie&gt;
+</CodeBlock>
+
+- `<réseau-dest>` : adresse réseau de destination
+- `<masque>` : masque de sous-réseau en décimal
+- `<ip-next-hop>` : IP du prochain routeur (recommandé)
+- `<interface-de-sortie>` : alternative pour les liens point-à-point
+
+## Exemple minimal
+
+Depuis R1, atteindre le réseau `192.168.2.0/24` via R2 (`10.0.0.2`) :
+
+<CodeBlock lang="cisco" title="Ajouter une route statique sur R1">
+R1> enable
+R1# configure terminal
+R1(config)# ip route 192.168.2.0 255.255.255.0 10.0.0.2
+R1(config)# end
+R1# write memory
+</CodeBlock>
+
+## Topologie
+
+<Topology>
+{`   PC1 (192.168.1.1)
+         │
+   R1 [Gi0/0: 192.168.1.254]
+      [Gi0/1: 10.0.0.1] ────── [10.0.0.2: Gi0/1] R2
+                                [Gi0/0: 192.168.2.254]
+                                       │
+                                PC2 (192.168.2.1)
+
+   R1: ip route 192.168.2.0 255.255.255.0 10.0.0.2
+   R2: ip route 192.168.1.0 255.255.255.0 10.0.0.1`}
+</Topology>
+
+## Étapes détaillées
+
+**1. Planifier les routes nécessaires**
+
+Avant de configurer, liste les routes à créer dans les deux sens :
+
+| Routeur | Réseau destination | Via (next-hop) |
+|---------|--------------------|----------------|
+| R1 | 192.168.2.0/24 | 10.0.0.2 |
+| R2 | 192.168.1.0/24 | 10.0.0.1 |
+
+**2. Configurer la route sur R1**
+
+Depuis <CliPrompt mode="config" /> :
+
+<CodeBlock lang="cisco">
+R1(config)# ip route 192.168.2.0 255.255.255.0 10.0.0.2
+</CodeBlock>
+
+**3. Configurer la route retour sur R2**
+
+<CodeBlock lang="cisco">
+R2(config)# ip route 192.168.1.0 255.255.255.0 10.0.0.1
+</CodeBlock>
+
+**4. Route flottante (backup, optionnel)**
+
+<CodeBlock lang="cisco" title="Route de secours avec distance administrative élevée">
+R1(config)# ip route 192.168.2.0 255.255.255.0 10.0.1.2 150
+</CodeBlock>
+
+Une distance > 1 la rend **flottante** (utilisée uniquement si la route principale disparaît).
+
+## Vérification
+
+<CodeBlock lang="cisco" title="Vérifier la table de routage">
+R1# show ip route
+
+Gateway of last resort is not set
+
+C    10.0.0.0/30 is directly connected, GigabitEthernet0/1
+L    10.0.0.1/32 is directly connected, GigabitEthernet0/1
+C    192.168.1.0/24 is directly connected, GigabitEthernet0/0
+S    192.168.2.0/24 [1/0] via 10.0.0.2
+</CodeBlock>
+
+`S` = route statique. `[1/0]` = distance administrative 1, métrique 0.
+
+<CodeBlock lang="cisco" title="Tester la connectivité">
+R1# ping 192.168.2.1
+!!!!!
+Success rate is 100 percent (5/5)
+</CodeBlock>
+
+## Pièges fréquents
+
+<Callout type="danger" title="Oublier la route retour">
+  Si R1 a une route vers 192.168.2.0 mais que R2 n'a pas de route vers 192.168.1.0,
+  les paquets arrivent mais les réponses sont perdues. **Toujours configurer les deux sens.**
+</Callout>
+
+<Callout type="warning" title="Adresse réseau vs adresse hôte">
+  `ip route 192.168.2.1 255.255.255.255` route vers un hôte unique (masque /32).
+  `ip route 192.168.2.0 255.255.255.0` route vers le réseau entier (/24).
+  Vérifie toujours que tu utilises l'**adresse réseau** (bits hôte à 0).
+</Callout>
+
+<Callout type="tip" title="Supprimer une route statique">
+  Préfixe la commande avec `no` :
+  `no ip route 192.168.2.0 255.255.255.0 10.0.0.2`.
+</Callout>
+
+## Voir aussi
+
+- [Route par défaut](/commands/routing/route-par-defaut)
+- [Configurer une interface](/commands/routing/configurer-interface)
+- [show ip interface brief](/commands/diagnostic/show-ip-interface-brief)

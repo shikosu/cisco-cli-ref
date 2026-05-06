@@ -1,0 +1,120 @@
+---
+title: "show ip interface brief"
+description: "Afficher un tableau résumé des interfaces avec leur IP et leur état — commande de diagnostic indispensable."
+category: "diagnostic"
+mode: "privileged"
+syntax: "show ip interface brief"
+devices: ["switch", "router"]
+difficulty: "debutant"
+related:
+  - "routing/configurer-interface"
+  - "diagnostic/show-running-config"
+  - "diagnostic/ping"
+examTags: ["bac-pro-ciel", "bts-sio"]
+updated: 2026-05-06
+---
+
+import { Badge, CliPrompt, CodeBlock, Callout, Topology, Kbd } from '@/components/ui';
+
+## En bref
+
+`show ip interface brief` (abrégeable en `show ip int br`) affiche en une seule vue tabulaire **toutes les interfaces**, leur adresse IP, et leur état selon deux dimensions : **Status** (couche 1 — physique) et **Protocol** (couche 2/3 — logique). C'est la première commande à lancer pour diagnostiquer un problème de connectivité.
+
+## Syntaxe
+
+<CodeBlock lang="cisco">
+show ip interface brief
+</CodeBlock>
+
+Pas de paramètre obligatoire. Fonctionne identiquement sur routeur et switch.
+
+## Exemple de sortie
+
+<CodeBlock lang="cisco" title="Sortie typique sur un routeur">
+Router# show ip interface brief
+Interface              IP-Address      OK? Method Status                Protocol
+GigabitEthernet0/0     192.168.1.254   YES manual up                    up
+GigabitEthernet0/1     10.0.0.1        YES manual up                    up
+GigabitEthernet0/2     unassigned      YES unset  administratively down down
+Serial0/0/0            unassigned      YES unset  down                   down
+</CodeBlock>
+
+## Lecture du tableau
+
+| Colonne | Signification |
+|---------|--------------|
+| `Interface` | Nom complet de l'interface |
+| `IP-Address` | IP configurée (`unassigned` si aucune) |
+| `OK?` | La configuration IP est valide |
+| `Method` | Comment l'IP a été configurée (`manual`, `DHCP`, `unset`) |
+| `Status` | État physique (couche 1) |
+| `Protocol` | État logique (couche 2/3) |
+
+## Interprétation des états
+
+| Status | Protocol | Signification | Cause probable |
+|--------|----------|---------------|----------------|
+| `up` | `up` | ✅ Interface fonctionnelle | — |
+| `up` | `down` | ⚠️ Lien actif, protocole KO | Encapsulation, keepalives |
+| `administratively down` | `down` | 🔴 Désactivée manuellement | Pas de `no shutdown` |
+| `down` | `down` | 🔴 Pas de signal physique | Câble débranché, port HS |
+
+## Étapes détaillées
+
+**1. Lancer la commande**
+
+Depuis <CliPrompt mode="privileged" /> :
+
+<CodeBlock lang="cisco">
+Router# show ip interface brief
+</CodeBlock>
+
+**2. Identifier les interfaces problématiques**
+
+- `administratively down` → faire `no shutdown` sur l'interface
+- `down / down` → vérifier le câblage physique ou l'état de l'équipement distant
+
+**3. Corriger une interface inactive**
+
+<CodeBlock lang="cisco" title="Activer une interface administratively down">
+Router(config)# interface gigabitethernet 0/2
+Router(config-if)# ip address 10.1.1.1 255.255.255.252
+Router(config-if)# no shutdown
+</CodeBlock>
+
+## Vérification
+
+<CodeBlock lang="cisco" title="Filtrer uniquement les interfaces up">
+Router# show ip interface brief | include up
+GigabitEthernet0/0     192.168.1.254   YES manual up                    up
+GigabitEthernet0/1     10.0.0.1        YES manual up                    up
+</CodeBlock>
+
+<CodeBlock lang="cisco" title="Sur un switch — voir les interfaces VLAN (SVI)">
+Switch# show ip interface brief
+Interface              IP-Address      OK? Method Status                Protocol
+Vlan1                  192.168.1.1     YES manual up                    up
+GigabitEthernet0/1     unassigned      YES unset  up                    up
+GigabitEthernet0/2     unassigned      YES unset  up                    up
+</CodeBlock>
+
+Sur un switch L2, seules les interfaces VLAN (SVI) ont des adresses IP.
+
+## Pièges fréquents
+
+<Callout type="warning" title="Status up mais Protocol down">
+  Si Status est `up` (câble branché) mais Protocol est `down`, c'est souvent un
+  problème d'encapsulation ou de protocole. Sur une interface Serial : vérifier
+  `encapsulation` et `clock rate`, ou l'état de l'équipement en face.
+</Callout>
+
+<Callout type="tip" title="Raccourcis acceptés">
+  `show ip interface brief` accepte de nombreuses abréviations :
+  `show ip int br`, `sh ip int br`, `sh ip int b` — toutes fonctionnent.
+</Callout>
+
+## Voir aussi
+
+- [Configurer une interface](/commands/routing/configurer-interface)
+- [show running-config](/commands/diagnostic/show-running-config)
+- [Ping](/commands/diagnostic/ping)

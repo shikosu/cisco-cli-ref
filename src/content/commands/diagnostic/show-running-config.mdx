@@ -1,0 +1,143 @@
+---
+title: "show running-config"
+description: "Afficher la configuration active d'un équipement Cisco — vérification, diagnostic et référence configuration."
+category: "diagnostic"
+mode: "privileged"
+syntax: "show running-config [| include | section <pattern>]"
+devices: ["switch", "router"]
+difficulty: "debutant"
+related:
+  - "bases/sauvegarder-config"
+  - "diagnostic/show-ip-interface-brief"
+  - "securite/enable-secret"
+examTags: ["bac-pro-ciel", "bts-sio"]
+updated: 2026-05-06
+---
+
+import { Badge, CliPrompt, CodeBlock, Callout, Topology, Kbd } from '@/components/ui';
+
+## En bref
+
+`show running-config` affiche **toute la configuration active** en RAM. C'est la commande de référence pour vérifier ce qui est configuré sur un équipement. Elle supporte des filtres puissants (`| include`, `| section`) pour cibler rapidement une partie de la config.
+
+## Syntaxe
+
+<CodeBlock lang="cisco">
+show running-config
+show running-config | include &lt;pattern&gt;
+show running-config | section &lt;section&gt;
+show running-config | begin &lt;pattern&gt;
+</CodeBlock>
+
+- `| include` : affiche uniquement les lignes contenant le pattern (comme `grep`)
+- `| section` : affiche une section complète (interface, line vty, etc.)
+- `| begin` : affiche à partir de la première ligne contenant le pattern
+
+## Exemple minimal
+
+<CodeBlock lang="cisco" title="Afficher la config complète">
+Switch# show running-config
+Building configuration...
+
+Current configuration : 1589 bytes
+!
+version 15.2
+hostname SW-Lattes-01
+!
+enable secret 5 $1$mERr$9cTjUIkIqozOAF0mDh7rz.
+!
+...
+</CodeBlock>
+
+## Utilisation avec filtres
+
+<CodeBlock lang="cisco" title="Trouver le hostname">
+Switch# show running-config | include hostname
+hostname SW-Lattes-01
+</CodeBlock>
+
+<CodeBlock lang="cisco" title="Voir la config d'un type d'interface">
+Switch# show running-config | section interface GigabitEthernet
+interface GigabitEthernet0/0
+ ip address 192.168.1.254 255.255.255.0
+ duplex auto
+ speed auto
+ no shutdown
+</CodeBlock>
+
+<CodeBlock lang="cisco" title="Voir les lignes VTY">
+Switch# show running-config | section line vty
+line vty 0 4
+ password Telnet1!
+ login
+ transport input telnet
+</CodeBlock>
+
+<CodeBlock lang="cisco" title="Chercher tous les VLAN configurés">
+Switch# show running-config | include vlan
+vlan 10
+vlan 20
+ switchport access vlan 10
+</CodeBlock>
+
+## Étapes détaillées
+
+**1. Afficher la config depuis le mode privilégié**
+
+Depuis <CliPrompt mode="privileged" /> :
+
+<CodeBlock lang="cisco">
+Switch# show running-config
+</CodeBlock>
+
+Utilise <Kbd>Espace</Kbd> pour avancer page par page, <Kbd>Q</Kbd> pour quitter.
+
+**2. Cibler une section**
+
+<CodeBlock lang="cisco">
+Switch# show running-config | section interface
+</CodeBlock>
+
+Affiche toutes les interfaces et leur configuration.
+
+**3. Navigation dans la sortie longue**
+
+| Touche | Action |
+|--------|--------|
+| <Kbd>↵</Kbd> | Une ligne de plus |
+| <Kbd>Espace</Kbd> | Page suivante |
+| <Kbd>Q</Kbd> | Quitter `--More--` |
+
+## Vérification
+
+Pour comparer running-config et startup-config :
+
+<CodeBlock lang="cisco" title="Voir la config sauvegardée">
+Switch# show startup-config
+</CodeBlock>
+
+Si les deux sont identiques, la configuration est sauvegardée.
+
+## Pièges fréquents
+
+<Callout type="warning" title="running-config ≠ startup-config">
+  `show running-config` affiche ce qui est **actif en ce moment** (RAM). Si tu n'as pas
+  fait `write memory`, la startup-config est l'ancienne version. Après un redémarrage,
+  c'est la startup-config qui est chargée — et tu perds les modifications.
+</Callout>
+
+<Callout type="tip" title="Raccourci : show run">
+  `show running-config` peut être abrégé en `show run`. Les filtres fonctionnent
+  de la même façon : `show run | include hostname`.
+</Callout>
+
+<Callout type="tip" title="Copier la config en sauvegarde">
+  En TP, tu peux faire `show run`, sélectionner tout le texte affiché et le coller
+  dans un fichier texte — pratique pour garder une trace de ta config avant une modif risquée.
+</Callout>
+
+## Voir aussi
+
+- [Sauvegarder la configuration](/commands/bases/sauvegarder-config)
+- [show ip interface brief](/commands/diagnostic/show-ip-interface-brief)
+- [Configurer enable secret](/commands/securite/enable-secret)

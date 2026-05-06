@@ -1,0 +1,138 @@
+---
+title: "Configurer une interface IP"
+description: "Assigner une adresse IP à une interface de routeur Cisco et l'activer — base du routage inter-réseau et WAN."
+category: "routing"
+mode: "config-if"
+syntax: "ip address <ip> <masque> + no shutdown"
+devices: ["router"]
+difficulty: "debutant"
+related:
+  - "routing/route-statique"
+  - "routing/route-par-defaut"
+  - "diagnostic/show-ip-interface-brief"
+examTags: ["bac-pro-ciel", "bts-sio", "but-rt"]
+updated: 2026-05-06
+---
+
+import { Badge, CliPrompt, CodeBlock, Callout, Topology, Kbd } from '@/components/ui';
+
+## En bref
+
+Une interface de routeur est **désactivée par défaut** (état `administratively down`). Pour la rendre active, il faut lui assigner une adresse IP puis l'activer avec `no shutdown`. C'est la configuration de base pour tout routage.
+
+## Syntaxe
+
+<CodeBlock lang="cisco">
+interface &lt;type&gt; &lt;numéro&gt;
+ ip address &lt;ip&gt; &lt;masque&gt;
+ no shutdown
+</CodeBlock>
+
+- `<type>` : `gigabitethernet`, `fastethernet`, `serial`, etc.
+- `ip address` : adresse IP + masque en notation décimale pointée
+- `no shutdown` : **obligatoire** pour activer l'interface
+
+## Exemple minimal
+
+Configurer `GigabitEthernet 0/0` avec l'IP `192.168.1.254/24` :
+
+<CodeBlock lang="cisco" title="Configurer Gi0/0">
+Router> enable
+Router# configure terminal
+Router(config)# interface gigabitethernet 0/0
+Router(config-if)# ip address 192.168.1.254 255.255.255.0
+Router(config-if)# no shutdown
+Router(config-if)# end
+Router# write memory
+</CodeBlock>
+
+## Topologie
+
+<Topology>
+{`   PC (192.168.1.1) ──── Router [Gi0/0: 192.168.1.254]
+                                 [Gi0/1: 10.0.0.1]
+                                       │
+                               ISP/WAN (10.0.0.2)`}
+</Topology>
+
+## Étapes détaillées
+
+**1. Identifier l'interface à configurer**
+
+<CodeBlock lang="cisco">
+Router# show ip interface brief
+</CodeBlock>
+
+Repère l'interface voulue et note son nom exact (`GigabitEthernet0/0`, `Serial0/0/0`, etc.).
+
+**2. Entrer dans la config de l'interface**
+
+Depuis <CliPrompt mode="config" /> :
+
+<CodeBlock lang="cisco">
+Router(config)# interface gigabitethernet 0/0
+Router(config-if)#
+</CodeBlock>
+
+Raccourci accepté : `int g0/0`.
+
+**3. Assigner l'adresse IP**
+
+<CodeBlock lang="cisco">
+Router(config-if)# ip address 192.168.1.254 255.255.255.0
+</CodeBlock>
+
+**4. Activer l'interface**
+
+<CodeBlock lang="cisco">
+Router(config-if)# no shutdown
+%LINK-5-CHANGED: Interface GigabitEthernet0/0, changed state to up
+%LINEPROTO-5-UPDOWN: Line protocol on Interface GigabitEthernet0/0, changed state to up
+</CodeBlock>
+
+Ces messages confirment que l'interface est montée.
+
+**5. Ajouter une description (optionnel)**
+
+<CodeBlock lang="cisco">
+Router(config-if)# description LAN-Salle-Info-01
+</CodeBlock>
+
+## Vérification
+
+<CodeBlock lang="cisco" title="Vérifier toutes les interfaces">
+Router# show ip interface brief
+Interface              IP-Address      OK? Method Status                Protocol
+GigabitEthernet0/0     192.168.1.254   YES manual up                    up
+GigabitEthernet0/1     10.0.0.1        YES manual up                    up
+</CodeBlock>
+
+<CodeBlock lang="cisco" title="Vérifier une interface spécifique">
+Router# show interfaces gigabitethernet 0/0
+GigabitEthernet0/0 is up, line protocol is up
+  Internet address is 192.168.1.254/24
+  MTU 1500 bytes, BW 1000000 Kbit/sec
+</CodeBlock>
+
+## Pièges fréquents
+
+<Callout type="danger" title="Interface down sans no shutdown">
+  Sans `no shutdown`, l'interface reste en `administratively down` même avec une IP configurée.
+  Aucun paquet ne peut passer.
+</Callout>
+
+<Callout type="warning" title="Masque en notation décimale, pas CIDR">
+  `ip address 192.168.1.254 /24` est **invalide**. Cisco IOS exige le masque décimal :
+  `255.255.255.0`. La notation CIDR `/24` n'est acceptée qu'en ACL et routes statiques.
+</Callout>
+
+<Callout type="tip" title="Interface Serial (WAN)">
+  Sur une interface série côté DCE, il faut aussi définir l'horloge :
+  `clock rate 64000`. Côté DTE, pas besoin — l'horloge vient du DCE.
+</Callout>
+
+## Voir aussi
+
+- [Routes statiques](/commands/routing/route-statique)
+- [Route par défaut](/commands/routing/route-par-defaut)
+- [show ip interface brief](/commands/diagnostic/show-ip-interface-brief)

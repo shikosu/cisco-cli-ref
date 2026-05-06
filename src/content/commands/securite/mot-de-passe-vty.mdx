@@ -1,0 +1,138 @@
+---
+title: "Mot de passe VTY (Telnet)"
+description: "Protéger les sessions Telnet/SSH (lignes VTY) d'un switch ou routeur Cisco — contrôle d'accès réseau de base."
+category: "securite"
+mode: "config-line"
+syntax: "line vty 0 4 + password <pass> + login"
+devices: ["switch", "router"]
+difficulty: "debutant"
+related:
+  - "securite/configurer-ssh"
+  - "securite/enable-secret"
+  - "securite/mot-de-passe-console"
+examTags: ["bac-pro-ciel", "bts-sio", "bts-cyber"]
+updated: 2026-05-06
+---
+
+import { Badge, CliPrompt, CodeBlock, Callout, Topology, Kbd } from '@/components/ui';
+
+## En bref
+
+Les **lignes VTY** (Virtual TeleType) gèrent les connexions distantes Telnet et SSH. `line vty 0 4` configure les 5 sessions simultanées possibles. Sans mot de passe VTY + `login`, Telnet refuse les connexions ou les accepte sans authentification.
+
+## Syntaxe
+
+<CodeBlock lang="cisco">
+line vty 0 4
+ password &lt;mot-de-passe&gt;
+ login
+ transport input telnet
+</CodeBlock>
+
+- `0 4` : 5 lignes (0 à 4), jusqu'à 5 sessions simultanées
+- `transport input telnet` : autorise Telnet (pour SSH uniquement : `transport input ssh`)
+
+## Exemple minimal
+
+<CodeBlock lang="cisco" title="Activer Telnet avec mot de passe">
+Switch> enable
+Switch# configure terminal
+Switch(config)# line vty 0 4
+Switch(config-line)# password Telnet1!
+Switch(config-line)# login
+Switch(config-line)# transport input telnet
+Switch(config-line)# end
+Switch# write memory
+</CodeBlock>
+
+## Topologie
+
+<Topology>
+{`   PC-Admin ──────► Switch (192.168.1.1)
+   > telnet 192.168.1.1
+   Password: ****
+   SW-Lattes-01>    ← User EXEC (enable pour aller plus loin)`}
+</Topology>
+
+## Étapes détaillées
+
+**1. Configurer une IP de management sur le switch**
+
+Sans IP, Telnet n'est pas possible. Sur un switch L2 :
+
+<CodeBlock lang="cisco">
+Switch(config)# interface vlan 1
+Switch(config-if)# ip address 192.168.1.1 255.255.255.0
+Switch(config-if)# no shutdown
+Switch(config-if)# exit
+</CodeBlock>
+
+**2. Entrer en config des lignes VTY**
+
+Depuis <CliPrompt mode="config" /> :
+
+<CodeBlock lang="cisco">
+Switch(config)# line vty 0 4
+Switch(config-line)#
+</CodeBlock>
+
+**3. Définir le mot de passe et activer la vérification**
+
+<CodeBlock lang="cisco">
+Switch(config-line)# password Telnet1!
+Switch(config-line)# login
+</CodeBlock>
+
+**4. Restreindre au protocole voulu**
+
+<CodeBlock lang="cisco">
+Switch(config-line)# transport input telnet
+</CodeBlock>
+
+Pour n'autoriser que SSH (recommandé en prod) :
+
+<CodeBlock lang="cisco">
+Switch(config-line)# transport input ssh
+</CodeBlock>
+
+## Vérification
+
+<CodeBlock lang="cisco" title="Vérifier la config VTY">
+Switch# show running-config | section line vty
+line vty 0 4
+ password Telnet1!
+ login
+ transport input telnet
+</CodeBlock>
+
+<CodeBlock lang="cisco" title="Tester la connexion Telnet">
+C:\> telnet 192.168.1.1
+Trying 192.168.1.1 ...Connected to 192.168.1.1.
+
+User Access Verification
+Password: ****
+SW-Lattes-01>
+</CodeBlock>
+
+## Pièges fréquents
+
+<Callout type="danger" title="Telnet n'est pas chiffré">
+  Telnet envoie tout (y compris le mot de passe) en **clair sur le réseau**. En production,
+  utilise SSH à la place. Telnet est acceptable uniquement en TP/simulation Packet Tracer.
+</Callout>
+
+<Callout type="warning" title="login absent = connexion refusée">
+  Sans `login`, Cisco peut répondre `Password required, but none set`.
+  Toujours définir `password` **et** `login` ensemble.
+</Callout>
+
+<Callout type="tip" title="exec-timeout sur VTY">
+  Ajoute `exec-timeout 10 0` pour déconnecter les sessions inactives après 10 minutes.
+  Indispensable en prod pour éviter les sessions abandonnées qui bloquent les lignes VTY.
+</Callout>
+
+## Voir aussi
+
+- [Configurer SSH (remplaçant sécurisé de Telnet)](/commands/securite/configurer-ssh)
+- [Mot de passe enable](/commands/securite/enable-secret)
+- [Mot de passe console](/commands/securite/mot-de-passe-console)

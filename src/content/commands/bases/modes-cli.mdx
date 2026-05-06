@@ -1,0 +1,144 @@
+---
+title: "Les modes CLI Cisco IOS"
+description: "Comprendre les 5 modes du CLI Cisco IOS — user, privileged, config global, config-if, config-line — et savoir naviguer entre eux."
+category: "bases"
+mode: "user"
+syntax: "enable | configure terminal | interface | line | exit | end"
+devices: ["switch", "router"]
+difficulty: "debutant"
+related:
+  - "bases/configurer-hostname"
+  - "bases/sauvegarder-config"
+  - "securite/enable-secret"
+examTags: ["bac-pro-ciel", "bts-sio"]
+updated: 2026-05-06
+---
+
+import { Badge, CliPrompt, CodeBlock, Callout, Topology, Kbd } from '@/components/ui';
+
+## En bref
+
+Le CLI Cisco IOS est organisé en **niveaux de modes** : chaque mode correspond à un niveau de privilège et à un ensemble de commandes différent. Comprendre ces modes est la base absolue avant toute configuration.
+
+## Les modes principaux
+
+| Mode | Prompt | Accès | Usage |
+|------|--------|-------|-------|
+| User EXEC | `Router>` | Automatique à la connexion | `ping`, `traceroute`, `show` limités |
+| Privileged EXEC | `Router#` | `enable` | `show`, `copy`, `debug`, `reload` |
+| Config global | `Router(config)#` | `configure terminal` | Toute configuration de l'équipement |
+| Config interface | `Router(config-if)#` | `interface <type> <num>` | IP, shutdown, duplex… |
+| Config line | `Router(config-line)#` | `line console 0` / `line vty 0 4` | Mots de passe console/VTY |
+| Config VLAN | `Switch(config-vlan)#` | `vlan <id>` | Nom du VLAN (switch uniquement) |
+| Config routeur | `Router(config-router)#` | `router ospf 1` | Protocoles de routage |
+
+## Naviguer entre les modes
+
+<CodeBlock lang="cisco" title="Enchaînement complet des modes">
+Router> enable
+Router# configure terminal
+Router(config)# interface gigabitethernet 0/0
+Router(config-if)# exit
+Router(config)# line vty 0 4
+Router(config-line)# end
+Router#
+</CodeBlock>
+
+## Les commandes de navigation
+
+| Commande | Depuis | Effet |
+|----------|--------|-------|
+| `enable` | User EXEC | → Privileged EXEC |
+| `configure terminal` | Privileged EXEC | → Config global |
+| `interface <if>` | Config global | → Config interface |
+| `line <type> <num>` | Config global | → Config line |
+| `vlan <id>` | Config global | → Config VLAN |
+| `exit` | N'importe quel sous-mode | Remonte d'un niveau |
+| `end` | N'importe quel sous-mode | → Privileged EXEC directement |
+
+## Topologie des modes
+
+<Topology>
+{`           User EXEC  (>)
+                ↓ enable
+           Privileged EXEC  (#)
+                ↓ configure terminal
+           Config Global  (config)#
+          ╱         ╲         ╲
+   interface      line vty    vlan
+   (config-if)  (config-line) (config-vlan)`}
+</Topology>
+
+## Étapes détaillées
+
+**1. Connexion initiale — Mode User EXEC**
+
+À la connexion console ou Telnet/SSH, le prompt s'affiche en mode <CliPrompt mode="user" />.
+Ce mode est en lecture seule partielle : `ping`, `show version`, mais pas `show running-config`.
+
+**2. Passer en Privileged EXEC**
+
+<CodeBlock lang="cisco">
+Router> enable
+Password: ****
+Router#
+</CodeBlock>
+
+Si aucun `enable secret` n'est configuré, la commande passe directement. Sinon, le mot de passe est demandé (il n'est pas affiché à l'écran).
+
+**3. Entrer en Config global**
+
+Depuis <CliPrompt mode="privileged" />, toujours via :
+
+<CodeBlock lang="cisco">
+Router# configure terminal
+Router(config)#
+</CodeBlock>
+
+Raccourci accepté : `conf t`.
+
+**4. Aller en Config interface**
+
+<CodeBlock lang="cisco">
+Router(config)# interface gigabitethernet 0/0
+Router(config-if)#
+</CodeBlock>
+
+Raccourcis : `int g0/0` ou `int f0/1` selon le type.
+
+**5. Revenir en arrière**
+
+- `exit` : remonte d'un niveau (config-if → config → privileged)
+- `end` ou <Kbd>Ctrl</Kbd>+<Kbd>Z</Kbd> : retour direct en privileged, depuis n'importe où
+
+## Vérification
+
+<CodeBlock lang="cisco" title="Identifier le niveau de privilège actuel">
+Router# show privilege
+Current privilege level is 15
+</CodeBlock>
+
+Le niveau 15 = Privileged EXEC (accès total). Le niveau 1 = User EXEC.
+
+## Pièges fréquents
+
+<Callout type="danger" title="Commande non reconnue">
+  Si le CLI répond `% Invalid input detected at '^' marker`, c'est souvent que tu es
+  dans le mauvais mode. Vérifie le prompt avant de taper une commande.
+</Callout>
+
+<Callout type="warning" title="exit vs end">
+  `exit` depuis la config d'une interface revient en config global.
+  `end` saute directement en privileged. Ne pas confondre quand tu enchaînes plusieurs sous-modes.
+</Callout>
+
+<Callout type="tip" title="Raccourcis IOS">
+  Cisco IOS accepte les abréviations non-ambiguës : `en` pour `enable`, `conf t` pour
+  `configure terminal`, `int f0/1` pour `interface fastethernet 0/1`.
+</Callout>
+
+## Voir aussi
+
+- [Configurer le hostname](/commands/bases/configurer-hostname)
+- [Sauvegarder la configuration](/commands/bases/sauvegarder-config)
+- [Définir un mot de passe enable](/commands/securite/enable-secret)
