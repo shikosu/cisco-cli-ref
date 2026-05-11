@@ -14,12 +14,125 @@ examTags: ["bac-pro-ciel", "bts-sio"]
 updated: 2026-05-06
 ---
 
-import { Callout } from '@/components/ui';
+import { CliPrompt, CodeBlock, Callout, Topology } from '@/components/ui';
 
-## À venir
+## En bref
 
-Cette fiche est en cours de rédaction.
+Un routeur Cisco peut jouer le rôle de **serveur DHCP** pour distribuer automatiquement les adresses IP, le masque, la passerelle et le DNS aux hôtes du réseau local. Cela évite de configurer chaque PC manuellement.
 
-<Callout type="note" title="Contenu à venir">
-  La fiche sur le serveur DHCP sera complétée prochainement. En attendant, consulte les autres fiches de la catégorie **services**.
+## Topologie de référence
+
+<Topology>
+    [PC1]──┐
+    [PC2]──┤──[Switch]──[Router R1]──Internet
+    [PC3]──┘   
+    
+R1 : interface Gi0/0 : 192.168.1.1/24 (LAN)
+     Pool DHCP : 192.168.1.10 → .254
+     Exclure : .1 à .9 (adresses réservées)
+</Topology>
+
+## Syntaxe clé
+
+<CodeBlock lang="cisco">
+ip dhcp excluded-address &lt;début&gt; &lt;fin&gt;
+ip dhcp pool &lt;nom&gt;
+ network &lt;réseau&gt; &lt;masque&gt;
+ default-router &lt;ip-gateway&gt;
+ dns-server &lt;ip-dns&gt;
+ lease &lt;jours&gt; &lt;heures&gt; &lt;minutes&gt;
+</CodeBlock>
+
+## Configuration complète
+
+**1. Exclure les adresses réservées (à faire EN PREMIER)**
+
+<CliPrompt mode="config" />
+
+<CodeBlock lang="cisco">
+Router(config)# ip dhcp excluded-address 192.168.1.1 192.168.1.9
+</CodeBlock>
+
+Les adresses .1 à .9 ne seront jamais distribuées aux clients.
+
+**2. Créer le pool DHCP**
+
+<CodeBlock lang="cisco">
+Router(config)# ip dhcp pool LAN_PRINCIPAL
+Router(dhcp-config)# network 192.168.1.0 255.255.255.0
+Router(dhcp-config)# default-router 192.168.1.1
+Router(dhcp-config)# dns-server 8.8.8.8 8.8.4.4
+Router(dhcp-config)# lease 7
+Router(dhcp-config)# exit
+</CodeBlock>
+
+**3. Vérifier que l'interface LAN est active**
+
+<CodeBlock lang="cisco">
+Router(config)# interface GigabitEthernet0/0
+Router(config-if)# ip address 192.168.1.1 255.255.255.0
+Router(config-if)# no shutdown
+</CodeBlock>
+
+## Paramètres du pool
+
+| Commande | Rôle |
+|---|---|
+| `network` | Plage d'adresses à distribuer |
+| `default-router` | Passerelle transmise aux clients |
+| `dns-server` | Serveur(s) DNS transmis aux clients |
+| `lease` | Durée du bail (défaut : 1 jour) |
+| `domain-name` | Suffixe DNS transmis aux clients |
+
+## Vérification
+
+<CliPrompt mode="privileged" />
+
+<CodeBlock lang="cisco" title="Baux DHCP actifs">
+Router# show ip dhcp binding
+IP address      Client-ID/        Lease expiration        Type
+                Hardware address
+192.168.1.10    0100.5056.C00001  Jun 13 2026 08:00 AM    Automatic
+192.168.1.11    0100.5056.C00002  Jun 13 2026 08:00 AM    Automatic
+</CodeBlock>
+
+<CodeBlock lang="cisco" title="Statistiques du serveur DHCP">
+Router# show ip dhcp server statistics
+Memory usage         22565
+Address pools        1
+Database agents      0
+Automatic bindings   2
+Manual bindings      0
+Expired bindings     0
+</CodeBlock>
+
+<CodeBlock lang="cisco" title="Pool configuré">
+Router# show ip dhcp pool
+Pool LAN_PRINCIPAL :
+ Utilization mark (high/low)    : 100 / 0
+ Subnet size (first/next)       : 0 / 0
+ Total addresses                : 254
+ Leased addresses               : 2
+ Available addresses            : 243
+ Excluded addresses             : 9
+</CodeBlock>
+
+## Pièges fréquents
+
+<Callout type="danger" title="Toujours exclure les adresses réservées AVANT de créer le pool">
+  Si tu crées le pool sans exclure l'IP de la gateway (ex: 192.168.1.1), le serveur DHCP pourrait distribuer cette IP à un client, provoquant un conflit d'adresse. Mets les exclusions en premier.
 </Callout>
+
+<Callout type="warning" title="Le DHCP est désactivé si aucun pool ne correspond à l'interface">
+  Le routeur distribue des adresses DHCP uniquement si la plage du pool correspond au réseau de l'interface. Si l'interface est sur 192.168.1.0/24 et le pool sur 192.168.2.0/24, aucune adresse ne sera distribuée.
+</Callout>
+
+<Callout type="tip" title="Libérer les baux pour déboguer">
+  Pour forcer un client à renouveler son adresse, utilise `clear ip dhcp binding *` (efface tous les baux) ou `clear ip dhcp binding &lt;ip&gt;`.
+</Callout>
+
+## Voir aussi
+
+- [Pool DHCP et exclusions (détails avancés)](/commands/services/dhcp-pool)
+- [Configurer une interface IP](/commands/routing/configurer-interface)
+- [show ip interface brief](/commands/diagnostic/show-ip-interface-brief)

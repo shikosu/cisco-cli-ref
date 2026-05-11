@@ -14,12 +14,106 @@ examTags: ["bts-sio", "bts-cyber", "but-rt"]
 updated: 2026-05-06
 ---
 
-import { Callout } from '@/components/ui';
+import { CliPrompt, CodeBlock, Callout, Topology } from '@/components/ui';
 
-## À venir
+## En bref
 
-Cette fiche est en cours de rédaction.
+Une ACL étendue filtre sur **4 critères** : IP source, IP destination, protocole (TCP/UDP/ICMP) et numéro de port. Beaucoup plus granulaire que l'ACL standard, elle permet par exemple "autoriser uniquement le trafic HTTP depuis ce réseau vers ce serveur". Numérotées de 100 à 199.
 
-<Callout type="note" title="Contenu à venir">
-  La fiche sur les ACL étendues sera complétée prochainement. En attendant, consulte les autres fiches de la catégorie **acl**.
+## Syntaxe complète
+
+<CodeBlock lang="cisco">
+access-list &lt;100-199&gt; &#123;permit|deny&#125; &lt;protocole&gt; &lt;source&gt; &lt;wildcard-src&gt; &lt;destination&gt; &lt;wildcard-dst&gt; [eq &lt;port&gt;]
+</CodeBlock>
+
+| Paramètre | Valeurs courantes |
+|---|---|
+| `protocole` | `ip`, `tcp`, `udp`, `icmp` |
+| `source` / `destination` | IP + wildcard, `host` IP, `any` |
+| `eq port` | Égal au port (ex: `eq 80`, `eq 443`, `eq 22`) |
+| `gt port` | Supérieur au port |
+| `lt port` | Inférieur au port |
+| `range port1 port2` | Plage de ports |
+
+## Ports courants à connaître
+
+| Service | Protocole | Port |
+|---|---|---|
+| HTTP | TCP | 80 |
+| HTTPS | TCP | 443 |
+| SSH | TCP | 22 |
+| Telnet | TCP | 23 |
+| DNS | UDP | 53 |
+| DHCP (client) | UDP | 68 |
+| FTP données | TCP | 20 |
+| FTP contrôle | TCP | 21 |
+
+## Exemples
+
+**1 — Autoriser HTTP et HTTPS depuis le LAN vers Internet**
+
+<CliPrompt mode="config" />
+
+<CodeBlock lang="cisco" title="ACL 100 — Navigation web uniquement">
+Router(config)# access-list 100 permit tcp 192.168.1.0 0.0.0.255 any eq 80
+Router(config)# access-list 100 permit tcp 192.168.1.0 0.0.0.255 any eq 443
+Router(config)# access-list 100 deny ip any any
+</CodeBlock>
+
+**2 — Bloquer Telnet vers un serveur spécifique**
+
+<CodeBlock lang="cisco" title="ACL 101 — Interdire Telnet vers 10.0.0.5">
+Router(config)# access-list 101 deny   tcp any host 10.0.0.5 eq 23
+Router(config)# access-list 101 permit ip any any
+</CodeBlock>
+
+**3 — Autoriser le ping (ICMP) uniquement depuis un réseau**
+
+<CodeBlock lang="cisco" title="ACL 102 — Ping autorisé depuis 192.168.1.0/24 uniquement">
+Router(config)# access-list 102 permit icmp 192.168.1.0 0.0.0.255 any
+Router(config)# access-list 102 deny   icmp any any
+Router(config)# access-list 102 permit ip any any
+</CodeBlock>
+
+## Appliquer sur une interface
+
+**Règle :** les ACL étendues se placent **près de la source** pour économiser la bande passante.
+
+<CliPrompt mode="config-if" />
+
+<CodeBlock lang="cisco" title="Appliquer ACL 100 en entrée côté LAN">
+Router(config)# interface GigabitEthernet0/0
+Router(config-if)# ip access-group 100 in
+</CodeBlock>
+
+## Vérification
+
+<CliPrompt mode="privileged" />
+
+<CodeBlock lang="cisco">
+Router# show access-lists 100
+Extended IP access list 100
+    10 permit tcp 192.168.1.0 0.0.0.255 any eq www (42 matches)
+    20 permit tcp 192.168.1.0 0.0.0.255 any eq 443 (18 matches)
+    30 deny ip any any (0 matches)
+</CodeBlock>
+
+## Pièges fréquents
+
+<Callout type="danger" title="Implicit deny à la fin — toujours prévoir le permit ip any any">
+  Sans `permit ip any any` en dernière règle, tout trafic qui ne correspond à aucune règle permit sera bloqué silencieusement. Vérifie les compteurs pour confirmer que le trafic légitime passe.
 </Callout>
+
+<Callout type="warning" title="Le protocole ip couvre tout">
+  `permit ip any any` autorise tous les protocoles IP (TCP, UDP, ICMP…). Si tu veux n'autoriser que TCP, utilise `permit tcp` — pas `permit ip`.
+</Callout>
+
+<Callout type="tip" title="Utiliser les mots-clés de port plutôt que les numéros">
+  IOS accepte `eq www` à la place de `eq 80`, `eq ssh` pour `eq 22`, etc. Cela rend les ACL plus lisibles dans la config.
+</Callout>
+
+## Voir aussi
+
+- [ACL standard](/commands/acl/acl-standard)
+- [ACL nommée](/commands/acl/acl-nommee)
+- [Appliquer une ACL sur une interface](/commands/acl/appliquer-acl)

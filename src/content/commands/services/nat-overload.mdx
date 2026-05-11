@@ -14,12 +14,117 @@ examTags: ["bts-sio", "but-rt"]
 updated: 2026-05-06
 ---
 
-import { Callout } from '@/components/ui';
+import { CliPrompt, CodeBlock, Callout, Topology } from '@/components/ui';
 
-## À venir
+## En bref
 
-Cette fiche est en cours de rédaction.
+Le NAT Overload (ou PAT — Port Address Translation) permet à **tous les hôtes d'un réseau privé** de partager **une seule adresse IP publique** pour accéder à Internet. Le routeur distingue les sessions grâce aux numéros de port source. C'est la configuration standard dans les box/routeurs domestiques et d'entreprise.
 
-<Callout type="note" title="Contenu à venir">
-  La fiche sur le NAT Overload (PAT) sera complétée prochainement. En attendant, consulte les autres fiches de la catégorie **services**.
+## Topologie de référence
+
+<Topology>
+[PC1 192.168.1.10]──┐
+[PC2 192.168.1.11]──┤──[Gi0/0]──[R1 NAT]──[Gi0/1]──Internet
+[PC3 192.168.1.12]──┘    inside            outside
+                         priv              203.0.113.1 (IP publique)
+
+PC1 → Internet : 192.168.1.10:12345 → 203.0.113.1:12345
+PC2 → Internet : 192.168.1.11:54321 → 203.0.113.1:54321
+Le routeur mémorise la correspondance port ↔ hôte privé.
+</Topology>
+
+## Configuration étape par étape
+
+**1. Créer une ACL standard définissant les hôtes à NATer**
+
+<CliPrompt mode="config" />
+
+<CodeBlock lang="cisco">
+Router(config)# access-list 1 permit 192.168.1.0 0.0.0.255
+</CodeBlock>
+
+**2. Marquer l'interface interne (LAN)**
+
+<CliPrompt mode="config-if" />
+
+<CodeBlock lang="cisco">
+Router(config)# interface GigabitEthernet0/0
+Router(config-if)# ip address 192.168.1.1 255.255.255.0
+Router(config-if)# ip nat inside
+Router(config-if)# no shutdown
+Router(config-if)# exit
+</CodeBlock>
+
+**3. Marquer l'interface externe (WAN / Internet)**
+
+<CodeBlock lang="cisco">
+Router(config)# interface GigabitEthernet0/1
+Router(config-if)# ip address 203.0.113.1 255.255.255.252
+Router(config-if)# ip nat outside
+Router(config-if)# no shutdown
+Router(config-if)# exit
+</CodeBlock>
+
+**4. Configurer le NAT Overload**
+
+<CliPrompt mode="config" />
+
+<CodeBlock lang="cisco" title="NAT Overload — ACL 1, interface WAN">
+Router(config)# ip nat inside source list 1 interface GigabitEthernet0/1 overload
+</CodeBlock>
+
+Le mot-clé `overload` active le PAT (plusieurs hôtes → une seule IP publique).
+
+**5. Configurer la route par défaut vers Internet**
+
+<CodeBlock lang="cisco">
+Router(config)# ip route 0.0.0.0 0.0.0.0 203.0.113.2
+</CodeBlock>
+
+## Vérification
+
+<CliPrompt mode="privileged" />
+
+<CodeBlock lang="cisco" title="Table de traduction NAT">
+Router# show ip nat translations
+Pro Inside global        Inside local        Outside local       Outside global
+tcp 203.0.113.1:12345   192.168.1.10:12345  8.8.8.8:53         8.8.8.8:53
+tcp 203.0.113.1:54321   192.168.1.11:80     142.250.74.196:443 142.250.74.196:443
+</CodeBlock>
+
+<CodeBlock lang="cisco" title="Statistiques NAT">
+Router# show ip nat statistics
+Total active translations: 2 (0 static, 2 dynamic; 2 extended)
+Outside interfaces: GigabitEthernet0/1
+Inside interfaces: GigabitEthernet0/0
+Hits: 156  Misses: 12
+...
+</CodeBlock>
+
+## Vider la table de traduction
+
+<CodeBlock lang="cisco">
+Router# clear ip nat translation *
+</CodeBlock>
+
+Utile pendant le débogage pour forcer de nouvelles entrées.
+
+## Pièges fréquents
+
+<Callout type="danger" title="ip nat inside et ip nat outside sont obligatoires sur CHAQUE interface">
+  Sans `ip nat inside` sur l'interface LAN et `ip nat outside` sur l'interface WAN, le NAT ne fonctionne pas du tout. C'est l'erreur la plus fréquente en TP.
 </Callout>
+
+<Callout type="warning" title="L'ACL doit correspondre exactement aux adresses du LAN">
+  Si l'ACL est trop restrictive (ex: `permit host 192.168.1.10` alors que tu as aussi 192.168.1.11), les hôtes non inclus dans l'ACL ne seront pas translatés et n'auront pas accès à Internet.
+</Callout>
+
+<Callout type="tip" title="Tester avec ping depuis un PC vers 8.8.8.8">
+  Pour vérifier que le NAT fonctionne, ping depuis un PC du LAN vers une IP publique (ex: `8.8.8.8`). Si le ping passe, regarde `show ip nat translations` pour confirmer la traduction.
+</Callout>
+
+## Voir aussi
+
+- [ACL standard](/commands/acl/acl-standard)
+- [Route par défaut](/commands/routing/route-par-defaut)
+- [Configurer une interface IP](/commands/routing/configurer-interface)

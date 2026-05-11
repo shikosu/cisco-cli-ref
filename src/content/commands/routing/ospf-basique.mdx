@@ -14,12 +14,120 @@ examTags: ["bts-sio", "but-rt"]
 updated: 2026-05-06
 ---
 
-import { Callout } from '@/components/ui';
+import { CliPrompt, CodeBlock, Callout, Topology } from '@/components/ui';
 
-## À venir
+## En bref
 
-Cette fiche est en cours de rédaction.
+OSPF (Open Shortest Path First) est un protocole de routage à **état de liens** (Link-State). Contrairement à RIP, il calcule le plus court chemin via l'algorithme de Dijkstra et converge rapidement. Il est organisé en **zones** (areas) pour les grands réseaux — en TP, on utilise presque toujours l'area 0 (backbone).
 
-<Callout type="note" title="Contenu à venir">
-  La fiche sur OSPF sera complétée prochainement. En attendant, consulte les autres fiches de la catégorie **routing**.
+## Topologie de référence
+
+<Topology>
+[LAN1 192.168.1.0/24]──[R1]──10.0.12.0/30──[R2]──[LAN2 192.168.2.0/24]
+                               └──10.0.13.0/30──[R3]──[LAN3 192.168.3.0/24]
+
+Tous dans l'area 0 (backbone OSPF)
+</Topology>
+
+## Syntaxe
+
+<CodeBlock lang="cisco">
+router ospf &lt;process-id&gt;
+ router-id &lt;a.b.c.d&gt;
+ network &lt;réseau&gt; &lt;wildcard&gt; area &lt;numéro-area&gt;
+ passive-interface &lt;interface&gt;
+ default-information originate
+</CodeBlock>
+
+| Paramètre | Description |
+|---|---|
+| `process-id` | Identifiant local (1–65535), n'a pas besoin d'être identique sur tous les routeurs |
+| `wildcard` | Inverse du masque : 255.255.255.255 – masque réseau |
+| `area` | Numéro de zone (0 = backbone) |
+
+## Calculer le wildcard mask
+
+| Masque réseau | Wildcard |
+|---|---|
+| 255.255.255.0 (/24) | 0.0.0.255 |
+| 255.255.255.252 (/30) | 0.0.0.3 |
+| 255.255.0.0 (/16) | 0.255.255.255 |
+
+## Configuration sur R1
+
+<CliPrompt mode="config" />
+
+<CodeBlock lang="cisco" title="OSPF sur R1 — area 0">
+R1(config)# router ospf 1
+R1(config-router)# router-id 1.1.1.1
+R1(config-router)# network 192.168.1.0 0.0.0.255 area 0
+R1(config-router)# network 10.0.12.0 0.0.0.3 area 0
+R1(config-router)# passive-interface GigabitEthernet0/0
+R1(config-router)# exit
+</CodeBlock>
+
+## Configuration sur R2
+
+<CodeBlock lang="cisco" title="OSPF sur R2 — area 0">
+R2(config)# router ospf 1
+R2(config-router)# router-id 2.2.2.2
+R2(config-router)# network 192.168.2.0 0.0.0.255 area 0
+R2(config-router)# network 10.0.12.0 0.0.0.3 area 0
+R2(config-router)# passive-interface GigabitEthernet0/0
+R2(config-router)# exit
+</CodeBlock>
+
+## Vérification
+
+<CliPrompt mode="privileged" />
+
+<CodeBlock lang="cisco" title="Voisins OSPF établis">
+R1# show ip ospf neighbor
+Neighbor ID  Pri  State     Dead Time  Address     Interface
+2.2.2.2       1   FULL/DR   00:00:31   10.0.12.2   Gi0/1
+</CodeBlock>
+
+`FULL` = adjacence établie. `DR` = Designated Router.
+
+<CodeBlock lang="cisco" title="Routes OSPF dans la table de routage">
+R1# show ip route ospf
+O    192.168.2.0/24 [110/2] via 10.0.12.2, 00:01:05, GigabitEthernet0/1
+</CodeBlock>
+
+`[110/2]` : distance administrative 110 (OSPF), coût 2.
+
+<CodeBlock lang="cisco" title="Base de données OSPF (LSDB)">
+R1# show ip ospf database
+</CodeBlock>
+
+## Propager la route par défaut via OSPF
+
+<CliPrompt mode="config-router" />
+
+<CodeBlock lang="cisco" title="Distribuer la route par défaut vers tous les routeurs OSPF">
+R1(config)# router ospf 1
+R1(config-router)# default-information originate
+</CodeBlock>
+
+Les autres routeurs OSPF recevront une route `O*E2 0.0.0.0/0`.
+
+## Pièges fréquents
+
+<Callout type="danger" title="Le router-id doit être unique sur tout le domaine OSPF">
+  Si deux routeurs ont le même `router-id`, les adjacences ne se forment pas. Configure toujours manuellement le `router-id` (ex: `1.1.1.1`, `2.2.2.2`…) plutôt que de laisser OSPF l'élire automatiquement via les IPs.
 </Callout>
+
+<Callout type="warning" title="Les interfaces passives ne forment pas d'adjacence">
+  `passive-interface` empêche l'envoi de Hello OSPF sur cette interface — les voisins ne sont pas découverts. Utilise-la sur les interfaces LAN (côté clients) et jamais sur les liens inter-routeurs.
+</Callout>
+
+<Callout type="tip" title="Astuce wildcard : 255.255.255.255 pour une seule interface">
+  `network 10.0.12.1 0.0.0.0 area 0` cible précisément l'IP 10.0.12.1 d'une interface. C'est plus précis que d'annoncer tout le sous-réseau et évite d'inclure des interfaces non souhaitées.
+</Callout>
+
+## Voir aussi
+
+- [show ip route](/commands/routing/show-ip-route)
+- [Route par défaut](/commands/routing/route-par-defaut)
+- [Configurer une interface IP](/commands/routing/configurer-interface)
+- [RIPv2](/commands/routing/rip-v2)

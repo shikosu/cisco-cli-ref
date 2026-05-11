@@ -13,12 +13,101 @@ examTags: ["bac-pro-ciel", "bts-sio"]
 updated: 2026-05-06
 ---
 
-import { Callout } from '@/components/ui';
+import { CliPrompt, CodeBlock, Callout } from '@/components/ui';
 
-## À venir
+## En bref
 
-Cette fiche est en cours de rédaction.
+`banner motd` affiche un message texte à chaque utilisateur qui se connecte à l'équipement, avant l'invite de connexion. En entreprise, ce message contient systématiquement une **mention légale** interdisant l'accès non autorisé.
 
-<Callout type="note" title="Contenu à venir">
-  La fiche sur le banner MOTD sera complétée prochainement. En attendant, consulte les autres fiches de la catégorie **bases**.
+## Syntaxe
+
+<CodeBlock lang="cisco">
+banner motd &lt;délimiteur&gt; &lt;message&gt; &lt;délimiteur&gt;
+</CodeBlock>
+
+Le **délimiteur** est un caractère unique (souvent `#`) qui marque le début et la fin du message. Il ne doit pas apparaître dans le texte du message.
+
+## Exemple minimal
+
+<CliPrompt mode="config" />
+
+<CodeBlock lang="cisco" title="Banner MOTD simple">
+Router(config)# banner motd #
+Acces reserve au personnel autorise.
+Toute connexion non autorisee est interdite.
+#
+</CodeBlock>
+
+Le message est saisi sur autant de lignes que nécessaire. La saisie se termine en tapant à nouveau le délimiteur (`#`) seul sur une ligne.
+
+## Étapes détaillées
+
+**1. Passer en mode configuration globale**
+
+<CliPrompt mode="privileged" />
+
+<CodeBlock lang="cisco">
+Router# configure terminal
+Router(config)#
+</CodeBlock>
+
+**2. Saisir la commande banner motd**
+
+<CliPrompt mode="config" />
+
+<CodeBlock lang="cisco" title="Message d'avertissement légal (best practice)">
+Router(config)# banner motd $
+******************************************
+* ACCES RESTREINT - PERSONNEL AUTORISE  *
+* Toute connexion non autorisee est     *
+* susceptible de poursuites judiciaires.*
+******************************************
+$
+</CodeBlock>
+
+Ici le délimiteur est `$` — n'importe quel caractère absent du message convient.
+
+**3. Sauvegarder la configuration**
+
+<CodeBlock lang="cisco">
+Router(config)# end
+Router# copy running-config startup-config
+</CodeBlock>
+
+## Vérification
+
+Le banner s'affiche automatiquement à la prochaine connexion (console, Telnet ou SSH). Pour le voir dans la config :
+
+<CliPrompt mode="privileged" />
+
+<CodeBlock lang="cisco">
+Router# show running-config | section banner
+banner motd $
+******************************************
+...
+$
+</CodeBlock>
+
+## Pièges fréquents
+
+<Callout type="warning" title="Le délimiteur ne doit pas figurer dans le message">
+  Si tu utilises `#` comme délimiteur et que ton message contient `#`, la bannière sera tronquée à la première occurrence. Choisis un caractère absent du texte : `$`, `@`, `^`, etc.
 </Callout>
+
+<Callout type="tip" title="Banner MOTD vs Banner Login">
+  Il existe deux types de banner :
+  - `banner motd` — affiché à **toute** connexion (console, Telnet, SSH)
+  - `banner login` — affiché uniquement **avant** l'invite `Username:` (connexions Telnet/SSH)
+
+  En pratique, `banner motd` suffit pour les TP.
+</Callout>
+
+<Callout type="danger" title="Ne pas mettre 'Welcome' ou 'Bienvenue'">
+  Un banner qui accueille chaleureusement l'utilisateur peut être interprété comme une invitation et affaiblir un argument juridique en cas d'intrusion. Utilise toujours un message d'avertissement.
+</Callout>
+
+## Voir aussi
+
+- [Configurer le hostname](/commands/bases/configurer-hostname)
+- [Mot de passe console](/commands/securite/mot-de-passe-console)
+- [Sauvegarder la configuration](/commands/bases/sauvegarder-config)

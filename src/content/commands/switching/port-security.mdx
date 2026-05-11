@@ -13,12 +13,113 @@ examTags: ["bts-sio", "bts-cyber"]
 updated: 2026-05-06
 ---
 
-import { Callout } from '@/components/ui';
+import { CliPrompt, CodeBlock, Callout } from '@/components/ui';
 
-## À venir
+## En bref
 
-Cette fiche est en cours de rédaction.
+Port Security restreint l'accès à un port de switch en n'autorisant qu'un nombre limité d'adresses MAC. Si un équipement non autorisé se branche, le port réagit selon la politique configurée (shutdown, restrict ou protect). Utile pour empêcher le branchement sauvage de machines sur le réseau.
 
-<Callout type="note" title="Contenu à venir">
-  La fiche sur Port Security sera complétée prochainement. En attendant, consulte les autres fiches de la catégorie **switching**.
+## Syntaxe
+
+<CodeBlock lang="cisco">
+switchport port-security
+switchport port-security maximum &lt;nombre&gt;
+switchport port-security violation &#123;shutdown | restrict | protect&#125;
+switchport port-security mac-address &lt;mac&gt;
+switchport port-security mac-address sticky
+</CodeBlock>
+
+## Modes de violation
+
+| Mode | Comportement | Log | Compteur | Port |
+|---|---|---|---|---|
+| `shutdown` | Port mis en `err-disabled` | Oui | Oui | Désactivé |
+| `restrict` | Trames illégales supprimées | Oui | Oui | Actif |
+| `protect` | Trames illégales supprimées | Non | Non | Actif |
+
+Le mode par défaut est `shutdown` (le plus sécurisé).
+
+## Configuration de base
+
+**Prérequis : le port doit être en mode access**
+
+<CliPrompt mode="config-if" />
+
+<CodeBlock lang="cisco" title="Port Security — 1 MAC autorisée, shutdown si violation">
+Switch(config)# interface FastEthernet0/1
+Switch(config-if)# switchport mode access
+Switch(config-if)# switchport port-security
+Switch(config-if)# switchport port-security maximum 1
+Switch(config-if)# switchport port-security violation shutdown
+</CodeBlock>
+
+## Adresses MAC : statique vs sticky
+
+**Statique — adresse fixée manuellement :**
+
+<CodeBlock lang="cisco">
+Switch(config-if)# switchport port-security mac-address 00AA.BB11.2233
+</CodeBlock>
+
+**Sticky — apprentissage automatique et mémorisation :**
+
+<CodeBlock lang="cisco" title="Port Security sticky (recommandé en TP)">
+Switch(config-if)# switchport port-security mac-address sticky
+</CodeBlock>
+
+Avec `sticky`, le switch apprend la première adresse MAC qui se connecte et l'ajoute automatiquement à la running-config. Pour la rendre permanente, sauvegarde avec `copy running-config startup-config`.
+
+## Vérification
+
+<CliPrompt mode="privileged" />
+
+<CodeBlock lang="cisco" title="État Port Security sur Fa0/1">
+Switch# show port-security interface FastEthernet0/1
+Port Security              : Enabled
+Port Status                : Secure-up
+Violation Mode             : Shutdown
+Aging Time                 : 0 mins
+Aging Type                 : Absolute
+SecureStatic Address Aging : Disabled
+Maximum MAC Addresses      : 1
+Total MAC Addresses        : 1
+Configured MAC Addresses   : 0
+Sticky MAC Addresses       : 1
+Last Source Address:Vlan   : 00AA.BB11.2233:10
+Security Violation Count   : 0
+</CodeBlock>
+
+<CodeBlock lang="cisco" title="Vue globale de tous les ports">
+Switch# show port-security
+</CodeBlock>
+
+## Réactiver un port err-disabled
+
+Quand une violation `shutdown` se produit, le port passe en `err-disabled`. Pour le réactiver :
+
+<CliPrompt mode="config-if" />
+
+<CodeBlock lang="cisco">
+Switch(config)# interface FastEthernet0/1
+Switch(config-if)# shutdown
+Switch(config-if)# no shutdown
+</CodeBlock>
+
+<Callout type="warning" title="Le port se re-désactive si la menace persiste">
+  Si l'équipement non autorisé est toujours branché, le port repassera en `err-disabled` dès son réactivation. Débranche d'abord l'intrus, puis réactive le port.
 </Callout>
+
+## Pièges fréquents
+
+<Callout type="danger" title="Port Security fonctionne uniquement en mode access">
+  Impossible d'activer Port Security sur un port trunk (`switchport mode trunk`). Si tu l'essaies, IOS renverra une erreur. Assure-toi que le port est en mode `access` d'abord.
+</Callout>
+
+<Callout type="tip" title="Sticky + sauvegarde = config persistante">
+  Les adresses apprises en sticky sont dans la running-config mais pas la startup-config tant que tu ne sauvegardes pas. Si l'équipement redémarre sans sauvegarde, il réapprendra les MACs au premier trafic.
+</Callout>
+
+## Voir aussi
+
+- [Attribuer un port à un VLAN](/commands/switching/attribuer-port-vlan)
+- [Créer un VLAN](/commands/switching/creer-vlan)

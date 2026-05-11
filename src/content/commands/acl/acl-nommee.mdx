@@ -14,12 +14,109 @@ examTags: ["bts-sio", "bts-cyber"]
 updated: 2026-05-06
 ---
 
-import { Callout } from '@/components/ui';
+import { CliPrompt, CodeBlock, Callout } from '@/components/ui';
 
-## À venir
+## En bref
 
-Cette fiche est en cours de rédaction.
+Les ACL nommées fonctionnent exactement comme les ACL numérotées, mais avec un **nom lisible** à la place d'un numéro. Avantage clé : on peut **supprimer une règle individuelle** sans devoir réécrire toute l'ACL. Indispensable en production.
 
-<Callout type="note" title="Contenu à venir">
-  La fiche sur les ACL nommées sera complétée prochainement. En attendant, consulte les autres fiches de la catégorie **acl**.
+## Syntaxe
+
+<CodeBlock lang="cisco">
+ip access-list standard &lt;nom&gt;
+ &#123;permit|deny&#125; &lt;source&gt; [&lt;wildcard&gt;]
+
+ip access-list extended &lt;nom&gt;
+ &#123;permit|deny&#125; &lt;protocole&gt; &lt;src&gt; &lt;wildcard&gt; &lt;dst&gt; &lt;wildcard&gt; [eq &lt;port&gt;]
+</CodeBlock>
+
+## Exemple — ACL standard nommée
+
+<CliPrompt mode="config" />
+
+<CodeBlock lang="cisco" title="ACL standard nommée BLOCK_RH">
+Router(config)# ip access-list standard BLOCK_RH
+Router(config-std-nacl)# deny   192.168.5.0 0.0.0.255
+Router(config-std-nacl)# permit any
+Router(config-std-nacl)# exit
+</CodeBlock>
+
+## Exemple — ACL étendue nommée
+
+<CodeBlock lang="cisco" title="ACL étendue nommée ALLOW_WEB">
+Router(config)# ip access-list extended ALLOW_WEB
+Router(config-ext-nacl)# permit tcp 192.168.1.0 0.0.0.255 any eq 80
+Router(config-ext-nacl)# permit tcp 192.168.1.0 0.0.0.255 any eq 443
+Router(config-ext-nacl)# permit icmp 192.168.1.0 0.0.0.255 any
+Router(config-ext-nacl)# deny ip any any
+Router(config-ext-nacl)# exit
+</CodeBlock>
+
+## Appliquer sur une interface
+
+<CliPrompt mode="config-if" />
+
+<CodeBlock lang="cisco">
+Router(config)# interface GigabitEthernet0/0
+Router(config-if)# ip access-group ALLOW_WEB in
+</CodeBlock>
+
+## Modifier une règle existante (avantage majeur)
+
+Avec une ACL numérotée, pour modifier une règle tu dois supprimer et réécrire tout. Avec une ACL nommée :
+
+**Afficher les règles avec numéros de séquence :**
+
+<CliPrompt mode="privileged" />
+
+<CodeBlock lang="cisco">
+Router# show access-lists ALLOW_WEB
+Extended IP access list ALLOW_WEB
+    10 permit tcp 192.168.1.0 0.0.0.255 any eq www (12 matches)
+    20 permit tcp 192.168.1.0 0.0.0.255 any eq 443 (8 matches)
+    30 permit icmp 192.168.1.0 0.0.0.255 any (3 matches)
+    40 deny ip any any (0 matches)
+</CodeBlock>
+
+**Supprimer une règle précise (séquence 30) :**
+
+<CliPrompt mode="config" />
+
+<CodeBlock lang="cisco">
+Router(config)# ip access-list extended ALLOW_WEB
+Router(config-ext-nacl)# no 30
+Router(config-ext-nacl)# exit
+</CodeBlock>
+
+**Insérer une règle entre les séquences 10 et 20 :**
+
+<CodeBlock lang="cisco">
+Router(config)# ip access-list extended ALLOW_WEB
+Router(config-ext-nacl)# 15 permit tcp 192.168.1.0 0.0.0.255 any eq 22
+Router(config-ext-nacl)# exit
+</CodeBlock>
+
+## ACL numérotée vs ACL nommée
+
+| Critère | Numérotée | Nommée |
+|---|---|---|
+| Identification | Numéro (1-199) | Nom lisible |
+| Modification règle | Impossible (réécriture) | Possible (no `séquence`) |
+| Usage recommandé | TP simples | Production |
+| Syntaxe d'application | `ip access-group 10 in` | `ip access-group MON_ACL in` |
+
+## Pièges fréquents
+
+<Callout type="warning" title="Les séquences par défaut s'incrémentent de 10">
+  IOS numérote automatiquement les règles par 10 (10, 20, 30…) pour laisser de la place aux insertions. Si tu as besoin d'insérer entre 10 et 20, utilise la séquence 15 — si la séquence est déjà prise, tu devras réorganiser.
 </Callout>
+
+<Callout type="tip" title="Nommer clairement les ACL">
+  Des noms comme `ALLOW_HTTP_LAN`, `BLOCK_TELNET_WAN` ou `RESTRICT_ADMIN` sont bien plus lisibles que `access-list 120` dans une grande config. Une bonne convention de nommage facilite les audits de sécurité.
+</Callout>
+
+## Voir aussi
+
+- [ACL standard](/commands/acl/acl-standard)
+- [ACL étendue](/commands/acl/acl-etendue)
+- [Appliquer une ACL sur une interface](/commands/acl/appliquer-acl)

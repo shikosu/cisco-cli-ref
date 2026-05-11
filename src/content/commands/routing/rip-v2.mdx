@@ -14,12 +14,121 @@ examTags: ["bac-pro-ciel", "bts-sio"]
 updated: 2026-05-06
 ---
 
-import { Callout } from '@/components/ui';
+import { CliPrompt, CodeBlock, Callout, Topology } from '@/components/ui';
 
-## À venir
+## En bref
 
-Cette fiche est en cours de rédaction.
+RIPv2 (Routing Information Protocol version 2) est un protocole de routage dynamique à **vecteur de distance**. Chaque routeur annonce ses réseaux directement connectés à ses voisins, qui propagent l'information. Simple à configurer, mais limité à 15 sauts maximum — inadapté aux grands réseaux.
 
-<Callout type="note" title="Contenu à venir">
-  La fiche sur RIPv2 sera complétée prochainement. En attendant, consulte les autres fiches de la catégorie **routing**.
+## Topologie de référence
+
+<Topology>
+[LAN1]──[R1]──10.0.0.0/30──[R2]──[LAN2]
+192.168.1.0/24              192.168.2.0/24
+
+R1 et R2 configurés avec RIPv2 :
+→ R1 apprend 192.168.2.0/24 via R2
+→ R2 apprend 192.168.1.0/24 via R1
+</Topology>
+
+## Syntaxe
+
+<CodeBlock lang="cisco">
+router rip
+ version 2
+ no auto-summary
+ network &lt;adresse-réseau-classful&gt;
+ passive-interface &lt;interface&gt;
+</CodeBlock>
+
+**Important :** `network` prend une **adresse classful** (classe A, B ou C complète), pas un sous-réseau. RIPv2 annoncera automatiquement tous les sous-réseaux correspondants.
+
+## Configuration sur R1
+
+<CliPrompt mode="config" />
+
+<CodeBlock lang="cisco" title="RIPv2 sur R1">
+R1(config)# router rip
+R1(config-router)# version 2
+R1(config-router)# no auto-summary
+R1(config-router)# network 192.168.1.0
+R1(config-router)# network 10.0.0.0
+R1(config-router)# passive-interface GigabitEthernet0/0
+R1(config-router)# exit
+</CodeBlock>
+
+## Configuration sur R2
+
+<CodeBlock lang="cisco" title="RIPv2 sur R2">
+R2(config)# router rip
+R2(config-router)# version 2
+R2(config-router)# no auto-summary
+R2(config-router)# network 192.168.2.0
+R2(config-router)# network 10.0.0.0
+R2(config-router)# passive-interface GigabitEthernet0/0
+R2(config-router)# exit
+</CodeBlock>
+
+## Paramètres importants
+
+| Commande | Rôle |
+|---|---|
+| `version 2` | Active RIPv2 (supporte VLSM et authentification) |
+| `no auto-summary` | Désactive le résumé automatique des routes |
+| `network` | Annonce les réseaux connectés sur cette plage |
+| `passive-interface` | Écoute les updates RIP mais n'en envoie pas (côté LAN) |
+
+## Vérification
+
+<CliPrompt mode="privileged" />
+
+<CodeBlock lang="cisco" title="Routes RIP apprises (code R)">
+R1# show ip route
+...
+R    192.168.2.0/24 [120/1] via 10.0.0.2, 00:00:12, GigabitEthernet0/1
+</CodeBlock>
+
+`[120/1]` : distance administrative 120 (RIP), métrique 1 (1 saut).
+
+<CodeBlock lang="cisco" title="Voisins et mises à jour RIP">
+R1# show ip rip database
+192.168.1.0/24    directly connected, GigabitEthernet0/0
+192.168.2.0/24    [1] via 10.0.0.2, 00:00:07, GigabitEthernet0/1
+</CodeBlock>
+
+<CodeBlock lang="cisco" title="Débogage RIP en temps réel">
+R1# debug ip rip
+RIP: received v2 update from 10.0.0.2 on GigabitEthernet0/1
+    192.168.2.0/24 via 0.0.0.0 in 1 hops
+R1# undebug all
+</CodeBlock>
+
+## Redistribuer la route par défaut
+
+<CliPrompt mode="config-router" />
+
+<CodeBlock lang="cisco" title="Propager la route par défaut via RIP">
+R1(config)# router rip
+R1(config-router)# default-information originate
+</CodeBlock>
+
+## Pièges fréquents
+
+<Callout type="danger" title="Ne pas oublier no auto-summary">
+  Sans `no auto-summary`, RIPv2 résume les routes à leur classe naturelle. Sur un réseau VLSM (sous-réseaux différents de la même classe A/B/C), cela provoque des routes incorrectes et des pertes de connectivité.
 </Callout>
+
+<Callout type="warning" title="passive-interface est indispensable côté LAN">
+  Sans `passive-interface` sur les interfaces LAN, RIP envoie des mises à jour toutes les 30 secondes aux PCs — inutile et consommateur de bande passante. Configure-la sur toutes les interfaces qui ne sont pas connectées à d'autres routeurs RIP.
+</Callout>
+
+<Callout type="tip" title="RIPv2 vs RIPv1">
+  Toujours utiliser `version 2` : RIPv1 ne supporte pas VLSM (pas de masque dans les mises à jour) et envoie en broadcast. RIPv2 envoie en multicast (224.0.0.9) et supporte les masques variables.
+</Callout>
+
+## Voir aussi
+
+- [show ip route](/commands/routing/show-ip-route)
+- [Route statique](/commands/routing/route-statique)
+- [Configurer une interface IP](/commands/routing/configurer-interface)
+- [OSPF basique](/commands/routing/ospf-basique)

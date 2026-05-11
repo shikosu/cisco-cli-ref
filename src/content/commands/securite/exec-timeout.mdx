@@ -13,12 +13,95 @@ examTags: ["bac-pro-ciel", "bts-sio", "bts-cyber"]
 updated: 2026-05-06
 ---
 
-import { Callout } from '@/components/ui';
+import { CliPrompt, CodeBlock, Callout } from '@/components/ui';
 
-## À venir
+## En bref
 
-Cette fiche est en cours de rédaction.
+`exec-timeout` déconnecte automatiquement une session console ou Telnet/SSH restée inactive trop longtemps. Sans ce paramètre, une session oubliée reste ouverte indéfiniment, laissant l'accès à l'équipement à quiconque passe devant l'écran.
 
-<Callout type="note" title="Contenu à venir">
-  La fiche sur `exec-timeout` sera complétée prochainement. En attendant, consulte les autres fiches de la catégorie **securite**.
+## Syntaxe
+
+<CodeBlock lang="cisco">
+exec-timeout &lt;minutes&gt; &lt;secondes&gt;
+</CodeBlock>
+
+| Paramètre | Description |
+|---|---|
+| `minutes` | Durée en minutes (0 à 35 791) |
+| `secondes` | Durée complémentaire en secondes (0 à 59) |
+
+## Exemple minimal
+
+<CliPrompt mode="config-line" />
+
+<CodeBlock lang="cisco" title="Timeout de 5 minutes sur la console">
+Router(config)# line console 0
+Router(config-line)# exec-timeout 5 0
+</CodeBlock>
+
+La session console se ferme après **5 minutes** d'inactivité.
+
+## Étapes de configuration
+
+**1. Console — timeout 5 minutes**
+
+<CliPrompt mode="config" />
+
+<CodeBlock lang="cisco">
+Router(config)# line console 0
+Router(config-line)# exec-timeout 5 0
+Router(config-line)# exit
+</CodeBlock>
+
+**2. VTY (Telnet / SSH) — timeout 10 minutes**
+
+<CodeBlock lang="cisco">
+Router(config)# line vty 0 4
+Router(config-line)# exec-timeout 10 0
+Router(config-line)# exit
+</CodeBlock>
+
+**3. Vérification**
+
+<CliPrompt mode="privileged" />
+
+<CodeBlock lang="cisco">
+Router# show running-config | section line
+line console 0
+ exec-timeout 5 0
+ password 7 082D495C0D1E1C5C4F
+ login
+line vty 0 4
+ exec-timeout 10 0
+ login local
+ transport input ssh
+</CodeBlock>
+
+## Valeurs courantes
+
+| Commande | Durée réelle |
+|---|---|
+| `exec-timeout 5 0` | 5 minutes |
+| `exec-timeout 0 30` | 30 secondes |
+| `exec-timeout 10 30` | 10 minutes et 30 secondes |
+| `exec-timeout 0 0` | **Jamais** (désactive le timeout) |
+
+## Pièges fréquents
+
+<Callout type="danger" title="exec-timeout 0 0 : session qui ne se ferme jamais">
+  `exec-timeout 0 0` désactive complètement le timeout. Une session console oubliée reste active indéfiniment. Ne l'utilise qu'en TP isolé, jamais en production.
 </Callout>
+
+<Callout type="warning" title="La valeur par défaut est 10 minutes">
+  Sans configuration explicite, IOS applique un `exec-timeout 10 0` (10 minutes). Ce n'est pas "pas de timeout" — c'est 10 minutes. Certains TP Packet Tracer semblent avoir un timeout très court : c'est normal.
+</Callout>
+
+<Callout type="tip" title="Augmenter le timeout pendant un TP">
+  Si l'équipement se déconnecte trop vite pendant la configuration, tu peux provisoirement mettre `exec-timeout 60 0` le temps du TP, puis le remettre à une valeur raisonnable avant de sauvegarder.
+</Callout>
+
+## Voir aussi
+
+- [Mot de passe console](/commands/securite/mot-de-passe-console)
+- [Mot de passe VTY (Telnet)](/commands/securite/mot-de-passe-vty)
+- [Configurer SSH](/commands/securite/configurer-ssh)

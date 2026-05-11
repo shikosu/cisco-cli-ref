@@ -13,12 +13,114 @@ examTags: ["bac-pro-ciel", "bts-sio"]
 updated: 2026-05-06
 ---
 
-import { Callout } from '@/components/ui';
+import { CliPrompt, CodeBlock, Callout, Topology } from '@/components/ui';
 
-## À venir
+## En bref
 
-Cette fiche est en cours de rédaction.
+Cette fiche complète la configuration DHCP avec les options avancées : exclusions d'adresses, durée de bail, plusieurs pools pour plusieurs VLANs, et DHCP helper-address pour relayer les requêtes DHCP à travers un routeur.
 
-<Callout type="note" title="Contenu à venir">
-  La fiche sur les pools DHCP et exclusions sera complétée prochainement. En attendant, consulte les autres fiches de la catégorie **services**.
+## Exclusions d'adresses
+
+Les adresses exclues ne seront **jamais** distribuées aux clients — elles sont réservées aux équipements à IP fixe (gateway, serveurs, imprimantes…).
+
+<CliPrompt mode="config" />
+
+<CodeBlock lang="cisco" title="Exclure une plage et une adresse unique">
+Router(config)# ip dhcp excluded-address 192.168.1.1 192.168.1.20
+Router(config)# ip dhcp excluded-address 192.168.1.254
+</CodeBlock>
+
+## Pool complet avec toutes les options
+
+<CodeBlock lang="cisco" title="Pool DHCP complet">
+Router(config)# ip dhcp pool VLAN10_COMPTA
+Router(dhcp-config)# network 192.168.10.0 255.255.255.0
+Router(dhcp-config)# default-router 192.168.10.1
+Router(dhcp-config)# dns-server 192.168.1.53 8.8.8.8
+Router(dhcp-config)# domain-name compta.entreprise.local
+Router(dhcp-config)# lease 3 12
+Router(dhcp-config)# exit
+</CodeBlock>
+
+**`lease 3 12`** = bail de **3 jours et 12 heures**.
+
+## Plusieurs pools (multi-VLAN)
+
+<Topology>
+R1 assure le DHCP pour 3 VLANs :
+
+VLAN 10 : 192.168.10.0/24 → pool VLAN10
+VLAN 20 : 192.168.20.0/24 → pool VLAN20
+VLAN 30 : 192.168.30.0/24 → pool VLAN30
+</Topology>
+
+<CodeBlock lang="cisco" title="3 pools pour 3 VLANs">
+Router(config)# ip dhcp excluded-address 192.168.10.1 192.168.10.9
+Router(config)# ip dhcp excluded-address 192.168.20.1 192.168.20.9
+Router(config)# ip dhcp excluded-address 192.168.30.1 192.168.30.9
+
+Router(config)# ip dhcp pool VLAN10
+Router(dhcp-config)# network 192.168.10.0 255.255.255.0
+Router(dhcp-config)# default-router 192.168.10.1
+Router(dhcp-config)# dns-server 8.8.8.8
+Router(dhcp-config)# exit
+
+Router(config)# ip dhcp pool VLAN20
+Router(dhcp-config)# network 192.168.20.0 255.255.255.0
+Router(dhcp-config)# default-router 192.168.20.1
+Router(dhcp-config)# dns-server 8.8.8.8
+Router(dhcp-config)# exit
+
+Router(config)# ip dhcp pool VLAN30
+Router(dhcp-config)# network 192.168.30.0 255.255.255.0
+Router(dhcp-config)# default-router 192.168.30.1
+Router(dhcp-config)# dns-server 8.8.8.8
+Router(dhcp-config)# exit
+</CodeBlock>
+
+## DHCP Helper-Address (relais DHCP)
+
+Si le serveur DHCP est sur un routeur **différent** du segment client, utilise `ip helper-address` pour relayer les broadcasts DHCP à travers le réseau :
+
+<Topology>
+[PC VLAN10] → [Switch] → [R_Local Gi0/0.10]
+                                 │
+                            ip helper-address 10.0.0.2
+                                 │
+                          [R_DHCP 10.0.0.2]
+                          (serveur DHCP centralisé)
+</Topology>
+
+<CliPrompt mode="config-if" />
+
+<CodeBlock lang="cisco" title="Relais DHCP sur l'interface client">
+R_Local(config)# interface GigabitEthernet0/0.10
+R_Local(config-if)# ip helper-address 10.0.0.2
+</CodeBlock>
+
+## Durée de bail — choisir la bonne valeur
+
+| Environnement | Bail recommandé |
+|---|---|
+| Réseau stable (bureaux fixes) | 7–30 jours |
+| Réseau avec rotation (hôtels, WiFi) | 4–8 heures |
+| Laboratoire / TP | 1 jour (défaut) |
+| `lease infinite` | Bail permanent (déconseillé) |
+
+## Pièges fréquents
+
+<Callout type="warning" title="ip dhcp excluded-address doit être dans le même réseau que le pool">
+  Exclure une adresse qui ne correspond à aucun pool n'a aucun effet. La commande s'applique globalement mais n'est pertinente que pour les pools qui couvrent cette plage.
 </Callout>
+
+<Callout type="tip" title="Vider les baux pour tester">
+  Après avoir modifié un pool, efface les baux existants pour que les clients reçoivent la nouvelle configuration :
+  ```
+  Router# clear ip dhcp binding *
+  ```
+</Callout>
+
+## Voir aussi
+
+- [Serveur DHCP (configuration de base)](/commands/services/dhcp-serveur)
+- [Configurer une interface IP](/commands/routing/configurer-interface)

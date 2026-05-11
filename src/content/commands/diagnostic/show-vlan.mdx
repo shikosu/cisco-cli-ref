@@ -14,12 +14,79 @@ examTags: ["bac-pro-ciel", "bts-sio", "but-rt"]
 updated: 2026-05-06
 ---
 
-import { Callout } from '@/components/ui';
+import { CliPrompt, CodeBlock, Callout, Topology } from '@/components/ui';
 
-## À venir
+## En bref
 
-Cette fiche est en cours de rédaction.
+`show vlan brief` affiche en une seule vue tous les VLAN présents sur le switch, leur état et les ports qui leur sont affectés. C'est la commande de vérification essentielle après toute configuration VLAN.
 
-<Callout type="note" title="Contenu à venir">
-  La fiche sur `show vlan brief` sera complétée prochainement. En attendant, consulte les autres fiches de la catégorie **diagnostic**.
+## Syntaxe
+
+<CodeBlock lang="cisco">
+show vlan brief
+</CodeBlock>
+
+La variante `show vlan` (sans `brief`) affiche en plus les informations MTU, SAID et les paramètres Token Ring — peu utiles en TP.
+
+## Exemple de sortie
+
+<CliPrompt mode="privileged" />
+
+<CodeBlock lang="cisco" title="Sortie show vlan brief">
+Switch# show vlan brief
+
+VLAN Name                             Status    Ports
+---- -------------------------------- --------- -------------------------------
+1    default                          active    Fa0/1, Fa0/2, Fa0/3, Fa0/4
+                                                Fa0/5, Fa0/11, Fa0/12, Gi0/1
+10   VLAN_RH                          active    Fa0/6, Fa0/7, Fa0/8
+20   VLAN_INFO                        active    Fa0/9, Fa0/10
+30   VLAN_MGMT                        active
+1002 fddi-default                     act/unsup
+1003 token-ring-default               act/unsup
+1004 fddinet-default                  act/unsup
+1005 trnet-default                    act/unsup
+</CodeBlock>
+
+## Lecture de la sortie
+
+| Colonne | Signification |
+|---|---|
+| `VLAN` | Identifiant numérique du VLAN (1–4094) |
+| `Name` | Nom du VLAN (`default` si non renommé) |
+| `Status` | `active` = opérationnel, `act/unsup` = non supporté sur ce modèle |
+| `Ports` | Ports en mode **access** affectés à ce VLAN |
+
+<Callout type="note" title="Les ports trunk n'apparaissent pas ici">
+  Les ports configurés en mode **trunk** (`switchport mode trunk`) ne sont pas listés dans `show vlan brief`. Pour les voir, utilise `show interfaces trunk`.
 </Callout>
+
+## Diagnostiquer un problème d'accès VLAN
+
+<Topology>
+Scénario : PC sur Fa0/6 ne communique pas → VLAN 10 ?
+
+Switch# show vlan brief
+VLAN  Name        Status   Ports
+1     default     active   Fa0/6   ← Fa0/6 est dans VLAN 1 !
+10    VLAN_RH     active           ← VLAN 10 vide
+
+Problème : le port n'a pas été assigné au bon VLAN.
+Solution : switchport access vlan 10 sur Fa0/6
+</Topology>
+
+## Pièges fréquents
+
+<Callout type="warning" title="VLAN 1 : le VLAN par défaut">
+  Tous les ports sont dans le VLAN 1 à la livraison. Si tu oublies d'assigner un port à son VLAN, le trafic passe quand même — mais dans le mauvais VLAN. Vérifie toujours avec `show vlan brief`.
+</Callout>
+
+<Callout type="warning" title="Un VLAN sans ports n'est pas forcément vide">
+  Un VLAN peut avoir des ports trunk sans apparaître dans `show vlan brief`. L'absence de ports access ne signifie pas que le VLAN est inutilisé.
+</Callout>
+
+## Voir aussi
+
+- [Créer un VLAN](/commands/switching/creer-vlan)
+- [Attribuer un port à un VLAN](/commands/switching/attribuer-port-vlan)
+- [show running-config](/commands/diagnostic/show-running-config)

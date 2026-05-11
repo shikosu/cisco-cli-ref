@@ -13,12 +13,112 @@ examTags: ["bts-sio", "bts-cyber"]
 updated: 2026-05-06
 ---
 
-import { Callout } from '@/components/ui';
+import { CliPrompt, CodeBlock, Callout, Topology } from '@/components/ui';
 
-## À venir
+## En bref
 
-Cette fiche est en cours de rédaction.
+`ntp server` synchronise l'horloge interne de l'équipement sur un serveur NTP (Network Time Protocol). Une heure correcte est indispensable pour les **logs système horodatés**, les **certificats SSH/TLS** et les protocoles de routage qui utilisent des timestamps.
 
-<Callout type="note" title="Contenu à venir">
-  La fiche sur le client NTP sera complétée prochainement. En attendant, consulte les autres fiches de la catégorie **services**.
+## Syntaxe
+
+<CodeBlock lang="cisco">
+ntp server &lt;adresse-ip-serveur-ntp&gt;
+</CodeBlock>
+
+On peut déclarer plusieurs serveurs NTP pour la redondance.
+
+## Exemple minimal
+
+<CliPrompt mode="config" />
+
+<CodeBlock lang="cisco" title="Synchronisation sur un serveur NTP public">
+Router(config)# ntp server 129.250.35.250
+</CodeBlock>
+
+## Configuration complète avec vérification
+
+**1. Configurer le serveur NTP**
+
+<CliPrompt mode="config" />
+
+<CodeBlock lang="cisco">
+Router(config)# ntp server 129.250.35.250
+Router(config)# ntp server 216.239.35.0
+</CodeBlock>
+
+**2. Configurer le fuseau horaire (optionnel mais recommandé)**
+
+<CodeBlock lang="cisco">
+Router(config)# clock timezone CET 1
+Router(config)# clock summer-time CEST recurring last Sun Mar 2:00 last Sun Oct 3:00
+</CodeBlock>
+
+**3. Vérifier la synchronisation**
+
+<CliPrompt mode="privileged" />
+
+<CodeBlock lang="cisco">
+Router# show ntp status
+Clock is synchronized, stratum 3, reference is 129.250.35.250
+nominal freq is 250.0000 Hz, actual freq is 249.9990 Hz
+...
+</CodeBlock>
+
+<CodeBlock lang="cisco">
+Router# show ntp associations
+  address         ref clock     st   when   poll   reach   delay   offset
+*~129.250.35.250  .GPS.          2     47     64     377    2.00   -0.11
+ ~216.239.35.0    .INIT.        16      -    256       0    0.00    0.00
+
+* sys.peer, # selected, + candidate, - outlyer, x falseticker, ~ configured
+</CodeBlock>
+
+Le `*` devant une adresse indique le serveur NTP actuellement utilisé.
+
+## Interpréter show ntp status
+
+| Champ | Signification |
+|---|---|
+| `synchronized` | Horloge synchronisée avec succès |
+| `unsynchronized` | Pas encore synchronisé (attendre quelques minutes) |
+| `stratum` | Niveau de précision (1 = GPS, 2 = synchronisé sur stratum 1…) |
+| `reference` | Adresse IP du serveur NTP de référence actuel |
+
+## Topologie TP typique
+
+<Topology>
+Réseau TP :
+  [PC] ─── [Switch] ─── [Router R1] ─── Internet ─── [Serveur NTP]
+                              │
+                         ntp server 129.250.35.250
+
+Si pas d'accès Internet en TP :
+  [Router R1] ─── [Router R2 (NTP master)]
+  R2(config)# ntp master 3   ← R2 joue le rôle de serveur NTP
+  R1(config)# ntp server 192.168.1.254
+</Topology>
+
+## NTP Master (serveur NTP interne pour TP)
+
+Si le réseau n'a pas accès à Internet, un routeur peut servir de source NTP locale :
+
+<CodeBlock lang="cisco" title="Configurer un routeur comme serveur NTP (stratum 3)">
+R2(config)# ntp master 3
+</CodeBlock>
+
+Les autres équipements se synchronisent ensuite sur l'IP de R2.
+
+## Pièges fréquents
+
+<Callout type="warning" title="La synchronisation prend du temps">
+  NTP peut prendre **2 à 5 minutes** pour synchroniser. Si `show ntp status` affiche `unsynchronized` juste après la configuration, attends avant de conclure à un problème.
 </Callout>
+
+<Callout type="tip" title="SSH nécessite une heure correcte">
+  La génération de clés RSA pour SSH (`crypto key generate rsa`) utilise l'horloge système. Une heure incorrecte peut causer des problèmes de certificat. Configure NTP avant SSH.
+</Callout>
+
+## Voir aussi
+
+- [Configurer SSH](/commands/securite/configurer-ssh)
+- [show running-config](/commands/diagnostic/show-running-config)

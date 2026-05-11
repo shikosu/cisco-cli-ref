@@ -14,12 +14,98 @@ examTags: ["bts-sio", "bts-cyber", "but-rt"]
 updated: 2026-05-06
 ---
 
-import { Callout } from '@/components/ui';
+import { CliPrompt, CodeBlock, Callout, Topology } from '@/components/ui';
 
-## À venir
+## En bref
 
-Cette fiche est en cours de rédaction.
+Une ACL standard filtre le trafic en se basant **uniquement sur l'adresse IP source**. Numérotées de 1 à 99 (ou 1300 à 1999 pour les étendues), elles sont simples mais peu granulaires. Règle d'or : **appliquer une ACL standard le plus près possible de la destination**.
 
-<Callout type="note" title="Contenu à venir">
-  La fiche sur les ACL standard sera complétée prochainement. En attendant, consulte les autres fiches de la catégorie **acl**.
+## Syntaxe
+
+<CodeBlock lang="cisco">
+access-list &lt;1-99&gt; &#123;permit|deny&#125; &lt;source&gt; [&lt;wildcard&gt;]
+access-list &lt;1-99&gt; &#123;permit|deny&#125; host &lt;ip&gt;
+access-list &lt;1-99&gt; &#123;permit|deny&#125; any
+</CodeBlock>
+
+| Paramètre | Description |
+|---|---|
+| `1-99` | Numéro de l'ACL standard |
+| `permit` / `deny` | Autoriser ou bloquer |
+| `source` + `wildcard` | Plage d'adresses sources |
+| `host` | Adresse exacte (équivaut à wildcard `0.0.0.0`) |
+| `any` | Toutes les adresses (équivaut à `0.0.0.0 255.255.255.255`) |
+
+## Wildcard mask pour les ACL
+
+Le wildcard est l'**inverse** du masque réseau. Un `0` signifie "ce bit doit correspondre", un `1` signifie "peu importe".
+
+| Réseau | Masque | Wildcard |
+|---|---|---|
+| 192.168.1.0/24 | 255.255.255.0 | 0.0.0.255 |
+| 192.168.1.0/25 | 255.255.255.128 | 0.0.0.127 |
+| 10.0.0.0/8 | 255.0.0.0 | 0.255.255.255 |
+| 192.168.1.5 (hôte) | — | 0.0.0.0 ou `host` |
+
+## Exemple — Bloquer un sous-réseau
+
+<Topology>
+Objectif : interdire 192.168.2.0/24 d'accéder à 192.168.1.0/24
+Appliquer sur R1, interface Gi0/0 (côté LAN1) en entrée... 
+Ou plus simple : interface Gi0/1 (côté LAN2) en sortie.
+</Topology>
+
+<CliPrompt mode="config" />
+
+<CodeBlock lang="cisco" title="ACL 10 — Autoriser uniquement 192.168.1.0/24">
+Router(config)# access-list 10 permit 192.168.1.0 0.0.0.255
+Router(config)# access-list 10 deny   192.168.2.0 0.0.0.255
+</CodeBlock>
+
+<Callout type="warning" title="Implicit deny all à la fin">
+  Toute ACL se termine par une règle implicite `deny any` invisible. Si aucune règle ne correspond, le trafic est bloqué. Ajoute toujours un `permit any` explicite si tu veux autoriser le reste.
 </Callout>
+
+## Exemple — Autoriser un seul hôte
+
+<CodeBlock lang="cisco" title="ACL 20 — Autoriser uniquement 192.168.1.10">
+Router(config)# access-list 20 permit host 192.168.1.10
+Router(config)# access-list 20 deny any
+</CodeBlock>
+
+## Appliquer sur une interface
+
+Voir [Appliquer une ACL](/commands/acl/appliquer-acl) pour la commande `ip access-group`.
+
+## Vérification
+
+<CliPrompt mode="privileged" />
+
+<CodeBlock lang="cisco" title="Afficher l'ACL et ses compteurs">
+Router# show access-lists 10
+Standard IP access list 10
+    10 permit 192.168.1.0, wildcard bits 0.0.0.255 (5 matches)
+    20 deny   192.168.2.0, wildcard bits 0.0.0.255 (2 matches)
+</CodeBlock>
+
+Le compteur `(X matches)` indique combien de paquets ont déclenché chaque règle — utile pour le débogage.
+
+## Pièges fréquents
+
+<Callout type="danger" title="L'ordre des règles est crucial">
+  IOS évalue les règles dans l'ordre. La première règle qui correspond est appliquée, les suivantes ignorées. Un `permit any` en première position rend l'ACL inutile.
+</Callout>
+
+<Callout type="tip" title="Placer l'ACL standard près de la destination">
+  Une ACL standard ne voit que la source — si tu la places près de la source, tu bloques le trafic vers toutes les destinations. Place-la sur l'interface de l'interface qui dessert la destination.
+</Callout>
+
+<Callout type="warning" title="Modifier une ACL numérotée = réécrire">
+  Pour modifier une règle dans une ACL numérotée, tu dois supprimer toute l'ACL (`no access-list 10`) et la recréer. Préfère les ACL nommées pour les environnements de production.
+</Callout>
+
+## Voir aussi
+
+- [ACL étendue](/commands/acl/acl-etendue)
+- [ACL nommée](/commands/acl/acl-nommee)
+- [Appliquer une ACL sur une interface](/commands/acl/appliquer-acl)

@@ -14,12 +14,87 @@ examTags: ["bac-pro-ciel", "bts-sio"]
 updated: 2026-05-06
 ---
 
-import { Callout } from '@/components/ui';
+import { CliPrompt, CodeBlock, Callout, Topology } from '@/components/ui';
 
-## À venir
+## En bref
 
-Cette fiche est en cours de rédaction.
+`traceroute` révèle **chaque routeur traversé** entre l'équipement source et la destination. Là où `ping` dit "ça marche ou pas", `traceroute` dit "ça tombe à quel saut". Indispensable pour localiser une panne de routage.
 
-<Callout type="note" title="Contenu à venir">
-  La fiche sur `traceroute` sera complétée prochainement. En attendant, consulte les autres fiches de la catégorie **diagnostic**.
+## Syntaxe
+
+<CodeBlock lang="cisco">
+traceroute &lt;ip-destination&gt;
+</CodeBlock>
+
+La commande envoie des paquets UDP avec un TTL croissant (1, 2, 3…). Chaque routeur qui décrémente le TTL à 0 renvoie un message ICMP **Time Exceeded**, révélant son adresse IP.
+
+## Exemple de sortie
+
+<CliPrompt mode="privileged" />
+
+<CodeBlock lang="cisco" title="Traceroute vers 192.168.30.1">
+Router# traceroute 192.168.30.1
+Type escape sequence to abort.
+Tracing the route to 192.168.30.1
+VRF info: (vrf in name/id, vrf out name/id)
+  1 192.168.10.254   4 msec   4 msec   4 msec
+  2 10.0.0.2        12 msec  12 msec  12 msec
+  3 192.168.30.1    16 msec  16 msec  16 msec
+</CodeBlock>
+
+Chaque ligne représente un **saut** (hop). Les 3 temps sont les RTT des 3 sondes envoyées par saut.
+
+## Interprétation des symboles
+
+| Symbole | Signification |
+|---|---|
+| `ms` (temps) | Saut atteignable, RTT affiché |
+| `* * *` | Pas de réponse (pare-feu, ICMP désactivé, timeout) |
+| `!H` | Host unreachable (hôte inaccessible) |
+| `!N` | Network unreachable (réseau inaccessible) |
+| `!P` | Protocol unreachable |
+
+<Callout type="note" title="* * * ne signifie pas forcément une panne">
+  Certains routeurs ignorent les paquets TTL=0 pour des raisons de sécurité. Si `traceroute` affiche `* * *` au milieu mais atteint la destination, les sauts intermédiaires filtrent juste les ICMP TTL Exceeded.
 </Callout>
+
+## Localiser une panne
+
+<Topology>
+Topologie : PC → R1 → R2 → R3 → Serveur
+
+Résultat traceroute depuis R1 :
+  1 192.168.1.1  (R2)  4 msec
+  2 *  *  *           ← R3 ne répond pas
+  3 *  *  *
+
+Conclusion : la panne est sur ou après R2.
+Vérifier : interface WAN de R3 ? Route sur R2 vers R3 ?
+</Topology>
+
+## Étapes de diagnostic recommandées
+
+**1. Ping d'abord** — confirmer que la destination est injoignable.
+
+**2. Traceroute** — identifier le dernier saut qui répond.
+
+**3. `show ip route`** sur le routeur suivant — vérifier qu'il a bien une route vers la destination.
+
+**4. `show ip interface brief`** — vérifier l'état des interfaces sur le routeur suspect.
+
+## Pièges fréquents
+
+<Callout type="warning" title="Traceroute asymétrique">
+  Le chemin aller (traceroute) peut être différent du chemin retour. Un saut qui répond lentement peut être dû à une asymétrie de routage, pas à un problème réel.
+</Callout>
+
+<Callout type="tip" title="Arrêter un traceroute bloqué">
+  Appuie sur **Ctrl+Shift+6** puis **X** pour interrompre un traceroute en cours (même raccourci que pour interrompre un ping étendu).
+</Callout>
+
+## Voir aussi
+
+- [Ping](/commands/diagnostic/ping)
+- [show ip interface brief](/commands/diagnostic/show-ip-interface-brief)
+- [show ip route](/commands/routing/show-ip-route)
+- [Route statique](/commands/routing/route-statique)

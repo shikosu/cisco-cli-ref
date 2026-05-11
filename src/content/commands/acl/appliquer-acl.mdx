@@ -14,12 +14,108 @@ examTags: ["bts-sio", "bts-cyber", "but-rt"]
 updated: 2026-05-06
 ---
 
-import { Callout } from '@/components/ui';
+import { CliPrompt, CodeBlock, Callout, Topology } from '@/components/ui';
 
-## À venir
+## En bref
 
-Cette fiche est en cours de rédaction.
+Créer une ACL ne suffit pas — elle doit être **attachée à une interface** avec `ip access-group` pour prendre effet. La direction (`in` ou `out`) détermine si l'ACL filtre le trafic **entrant** ou **sortant** par rapport au routeur.
 
-<Callout type="note" title="Contenu à venir">
-  La fiche sur l'application d'une ACL sera complétée prochainement. En attendant, consulte les autres fiches de la catégorie **acl**.
+## Syntaxe
+
+<CodeBlock lang="cisco">
+ip access-group &lt;numéro-ou-nom-acl&gt; &#123;in | out&#125;
+</CodeBlock>
+
+| Paramètre | Description |
+|---|---|
+| `numéro-ou-nom-acl` | Identifiant de l'ACL à appliquer |
+| `in` | Filtre le trafic entrant dans le routeur par cette interface |
+| `out` | Filtre le trafic sortant du routeur par cette interface |
+
+## Comprendre in vs out
+
+<Topology>
+Point de vue du ROUTEUR (pas du réseau) :
+
+[PC réseau A] ──→ [Gi0/0 IN → Routeur → Gi0/1 OUT] ──→ [Serveur réseau B]
+
+- ACL in sur Gi0/0 : filtre le trafic venant du réseau A
+- ACL out sur Gi0/1 : filtre le trafic allant vers le réseau B
+- Les deux bloquent les mêmes paquets, mais à des moments différents
+</Topology>
+
+## Exemple complet
+
+**Scénario :** Interdire l'accès du réseau 192.168.2.0/24 aux serveurs (192.168.1.0/24).
+
+**1. Créer l'ACL**
+
+<CliPrompt mode="config" />
+
+<CodeBlock lang="cisco">
+Router(config)# access-list 10 deny   192.168.2.0 0.0.0.255
+Router(config)# access-list 10 permit any
+</CodeBlock>
+
+**2. Appliquer sur l'interface**
+
+<CliPrompt mode="config-if" />
+
+<CodeBlock lang="cisco" title="ACL standard — near destination (out sur interface serveur)">
+Router(config)# interface GigabitEthernet0/0
+Router(config-if)# ip access-group 10 out
+</CodeBlock>
+
+## Règles de placement par type d'ACL
+
+| Type ACL | Placement recommandé | Raison |
+|---|---|---|
+| Standard | Près de la **destination** | Ne voit que la source → trop restrictif si placée près de la source |
+| Étendue | Près de la **source** | Voit source + destination → peut bloquer précisément sans affecter les autres flux |
+
+## Vérification
+
+<CliPrompt mode="privileged" />
+
+<CodeBlock lang="cisco" title="Vérifier les ACL sur les interfaces">
+Router# show ip interface GigabitEthernet0/0
+GigabitEthernet0/0 is up, line protocol is up
+  Inbound access list is not set
+  Outbound access list is 10
+</CodeBlock>
+
+<CodeBlock lang="cisco" title="Voir toutes les ACL et leurs compteurs">
+Router# show access-lists
+Standard IP access list 10
+    10 deny   192.168.2.0, wildcard bits 0.0.0.255 (3 matches)
+    20 permit any (18 matches)
+</CodeBlock>
+
+## Supprimer une ACL d'une interface
+
+<CliPrompt mode="config-if" />
+
+<CodeBlock lang="cisco">
+Router(config)# interface GigabitEthernet0/0
+Router(config-if)# no ip access-group 10 out
+</CodeBlock>
+
+## Pièges fréquents
+
+<Callout type="danger" title="Une seule ACL par sens par interface">
+  Tu ne peux appliquer qu'une seule ACL en `in` et une seule ACL en `out` par interface. Si tu appliques une deuxième ACL dans le même sens, elle remplace la première sans avertissement.
 </Callout>
+
+<Callout type="warning" title="Supprimer l'ACL de l'interface avant de la modifier">
+  Modifier une ACL déjà appliquée prend effet immédiatement — pas besoin de la réappliquer. Mais si tu supprimes et recrées l'ACL avec `no access-list 10`, tu dois la réappliquer sur l'interface.
+</Callout>
+
+<Callout type="tip" title="Tester avec ping avant et après">
+  Avant d'appliquer l'ACL, fais un ping depuis la machine source pour confirmer que ça fonctionne. Après l'application, refais le ping pour confirmer que le blocage est actif. Vérifie les compteurs `(X matches)`.
+</Callout>
+
+## Voir aussi
+
+- [ACL standard](/commands/acl/acl-standard)
+- [ACL étendue](/commands/acl/acl-etendue)
+- [ACL nommée](/commands/acl/acl-nommee)

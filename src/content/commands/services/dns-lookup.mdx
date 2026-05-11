@@ -13,12 +13,87 @@ examTags: ["bac-pro-ciel", "bts-sio"]
 updated: 2026-05-06
 ---
 
-import { Callout } from '@/components/ui';
+import { CliPrompt, CodeBlock, Callout } from '@/components/ui';
 
-## À venir
+## En bref
 
-Cette fiche est en cours de rédaction.
+Par défaut, IOS tente de résoudre toute commande inconnue comme un nom d'hôte DNS — ce qui provoque un délai de 30 secondes à chaque faute de frappe. `no ip domain-lookup` supprime ce comportement. À l'inverse, `ip name-server` configure un vrai serveur DNS pour les ping par nom.
 
-<Callout type="note" title="Contenu à venir">
-  La fiche sur le DNS Lookup sera complétée prochainement. En attendant, consulte les autres fiches de la catégorie **services**.
+## Syntaxe
+
+<CodeBlock lang="cisco">
+no ip domain-lookup                  ← désactiver la résolution DNS
+ip name-server &lt;ip-serveur-dns&gt;     ← configurer un serveur DNS
+ip domain-name &lt;domaine&gt;            ← suffixe DNS par défaut
+</CodeBlock>
+
+## Cas 1 — Désactiver DNS (TP, Packet Tracer)
+
+La situation typique en TP : tu tapes `sh int` au lieu de `show interfaces` et l'équipement reste bloqué 30 secondes à "tenter de résoudre sh en DNS". Solution :
+
+<CliPrompt mode="config" />
+
+<CodeBlock lang="cisco" title="Supprimer les délais DNS en TP">
+Router(config)# no ip domain-lookup
+</CodeBlock>
+
+<Callout type="tip" title="Commande à mémoriser pour tous les TP">
+  C'est souvent la **première commande** à taper après l'hostname. Elle t'évite des dizaines de secondes perdues sur des fautes de frappe.
 </Callout>
+
+## Cas 2 — Configurer la résolution DNS (production)
+
+**1. Déclarer le serveur DNS**
+
+<CliPrompt mode="config" />
+
+<CodeBlock lang="cisco">
+Router(config)# ip name-server 8.8.8.8
+Router(config)# ip name-server 8.8.4.4
+</CodeBlock>
+
+**2. Définir un suffixe de domaine (optionnel)**
+
+<CodeBlock lang="cisco">
+Router(config)# ip domain-name entreprise.local
+</CodeBlock>
+
+**3. Tester la résolution**
+
+<CliPrompt mode="privileged" />
+
+<CodeBlock lang="cisco">
+Router# ping www.google.com
+Translating "www.google.com"...domain server (8.8.8.8)
+Type escape sequence to abort.
+Sending 5, 100-byte ICMP Echos to 142.250.74.196...
+!!!!!
+</CodeBlock>
+
+## Vérification
+
+<CodeBlock lang="cisco">
+Router# show hosts
+Default domain is entreprise.local
+Name/address lookup uses domain service
+Name servers are 8.8.8.8, 8.8.4.4
+...
+</CodeBlock>
+
+## Le domaine SSH
+
+<Callout type="note" title="ip domain-name est requis pour SSH">
+  La commande `crypto key generate rsa` (génération des clés SSH) nécessite qu'un nom de domaine soit défini. Utilise `ip domain-name &lt;nom&gt;` même si tu n'utilises pas vraiment le DNS — cela sert de paramètre pour le nom FQDN de la clé.
+</Callout>
+
+## Pièges fréquents
+
+<Callout type="warning" title="no ip domain-lookup empêche aussi le SSH par nom">
+  Si tu désactives le DNS et que tu veux te connecter en SSH avec `ssh -l admin monrouteur.local`, ça ne fonctionnera pas. Pour un environnement de prod, configure plutôt le DNS correctement plutôt que de le désactiver.
+</Callout>
+
+## Voir aussi
+
+- [Configurer SSH](/commands/securite/configurer-ssh)
+- [Ping](/commands/diagnostic/ping)
+- [Serveur DHCP](/commands/services/dhcp-serveur)

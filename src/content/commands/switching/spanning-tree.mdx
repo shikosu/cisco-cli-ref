@@ -14,12 +14,120 @@ examTags: ["bts-sio", "but-rt"]
 updated: 2026-05-06
 ---
 
-import { Callout } from '@/components/ui';
+import { CliPrompt, CodeBlock, Callout, Topology } from '@/components/ui';
 
-## À venir
+## En bref
 
-Cette fiche est en cours de rédaction.
+STP (Spanning Tree Protocol) empêche les **boucles de couche 2** dans un réseau commuté avec des liens redondants. Sans STP, des trames pourraient circuler en boucle indéfiniment, saturant le réseau. STP élit un **root bridge** et bloque les ports redondants.
 
-<Callout type="note" title="Contenu à venir">
-  La fiche sur le Spanning Tree Protocol sera complétée prochainement. En attendant, consulte les autres fiches de la catégorie **switching**.
+## Comment STP fonctionne
+
+<Topology>
+3 switches avec liens redondants :
+
+    [SW1] ──── [SW2]
+      │    \      │
+      │     \     │
+    [SW3] ──── ──[SW3]
+
+STP élit SW1 comme Root Bridge (priorité la plus basse).
+SW2 et SW3 bloquent les ports redondants (état BLK).
+En cas de panne d'un lien, STP recalcule automatiquement.
+</Topology>
+
+**États des ports STP :**
+
+| État | Description |
+|---|---|
+| Blocking (BLK) | Port bloqué, ne transmet pas de données |
+| Listening | Écoute les BPDUs, ne transmet pas |
+| Learning | Apprend les adresses MAC, ne transmet pas |
+| Forwarding (FWD) | Transmet normalement |
+| Disabled | Port administrativement désactivé |
+
+## Syntaxe
+
+<CodeBlock lang="cisco">
+spanning-tree vlan &lt;id-vlan&gt; priority &lt;valeur&gt;
+spanning-tree vlan &lt;id-vlan&gt; root primary
+spanning-tree vlan &lt;id-vlan&gt; root secondary
+</CodeBlock>
+
+La priorité va de **0 à 61440** par incréments de 4096. Valeur par défaut : **32768**. Plus la priorité est basse, plus le switch est susceptible de devenir root bridge.
+
+## Vérifier l'état STP actuel
+
+<CliPrompt mode="privileged" />
+
+<CodeBlock lang="cisco" title="show spanning-tree">
+Switch# show spanning-tree vlan 1
+
+VLAN0001
+  Spanning tree enabled protocol ieee
+  Root ID    Priority    32769
+             Address     0001.C9A1.3B01
+             This bridge is the root        ← Ce switch EST le root bridge
+             ...
+  Bridge ID  Priority    32769
+             Address     0001.C9A1.3B01
+
+Interface        Role Sts Cost      Prio.Nbr Type
+---------------- ---- --- --------- -------- ----
+Fa0/1            Desg FWD 19        128.1    P2p
+Fa0/2            Desg FWD 19        128.2    P2p
+</CodeBlock>
+
+## Forcer l'élection du root bridge
+
+**Méthode 1 — Commande simplifiée (recommandée)**
+
+<CliPrompt mode="config" />
+
+<CodeBlock lang="cisco" title="Forcer SW1 comme root bridge pour VLAN 1">
+SW1(config)# spanning-tree vlan 1 root primary
+</CodeBlock>
+
+IOS choisit automatiquement une priorité inférieure à celle du root actuel.
+
+**Méthode 2 — Priorité manuelle**
+
+<CodeBlock lang="cisco">
+SW1(config)# spanning-tree vlan 1 priority 4096
+</CodeBlock>
+
+**Root secondaire (backup)**
+
+<CodeBlock lang="cisco">
+SW2(config)# spanning-tree vlan 1 root secondary
+</CodeBlock>
+
+## PortFast — accélérer les accès clients
+
+Sur les ports connectés à des PCs (pas des switches), PortFast passe directement à l'état Forwarding sans attendre les 30 secondes STP :
+
+<CliPrompt mode="config-if" />
+
+<CodeBlock lang="cisco" title="Activer PortFast sur un port access">
+Switch(config)# interface FastEthernet0/1
+Switch(config-if)# spanning-tree portfast
+</CodeBlock>
+
+## Pièges fréquents
+
+<Callout type="danger" title="Ne jamais activer PortFast sur un port trunk ou connecté à un switch">
+  PortFast sur un port trunk peut créer une boucle STP. Utilise-le **uniquement** sur les ports connectés à des hôtes finaux (PC, serveurs, imprimantes).
 </Callout>
+
+<Callout type="warning" title="La priorité doit être un multiple de 4096">
+  Si tu entres une valeur qui n'est pas multiple de 4096 (ex: `1000`), IOS renvoie une erreur. Valeurs courantes : 4096, 8192, 12288, 16384, 28672, 32768.
+</Callout>
+
+<Callout type="tip" title="PVST+ — un STP par VLAN">
+  Cisco utilise par défaut le **PVST+** (Per-VLAN Spanning Tree Plus). Cela signifie qu'il y a une instance STP indépendante par VLAN. Le root bridge peut être différent selon le VLAN.
+</Callout>
+
+## Voir aussi
+
+- [Créer un VLAN](/commands/switching/creer-vlan)
+- [Configurer un trunk](/commands/switching/configurer-trunk)
+- [EtherChannel (LACP)](/commands/switching/etherchannel)

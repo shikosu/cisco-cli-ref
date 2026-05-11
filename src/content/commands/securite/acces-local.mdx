@@ -14,12 +14,102 @@ examTags: ["bts-sio", "bts-cyber"]
 updated: 2026-05-06
 ---
 
-import { Callout } from '@/components/ui';
+import { CliPrompt, CodeBlock, Callout } from '@/components/ui';
 
-## À venir
+## En bref
 
-Cette fiche est en cours de rédaction.
+`username` crée un compte local sur l'équipement avec son propre mot de passe. Combiné à `login local` sur la ligne console ou VTY, chaque utilisateur s'authentifie avec **ses propres identifiants** plutôt qu'un mot de passe partagé. C'est aussi le prérequis pour SSH.
 
-<Callout type="note" title="Contenu à venir">
-  La fiche sur les comptes locaux (`username` / `login local`) sera complétée prochainement. En attendant, consulte les autres fiches de la catégorie **securite**.
+## Syntaxe
+
+<CodeBlock lang="cisco">
+username &lt;nom&gt; privilege &lt;niveau&gt; secret &lt;mot-de-passe&gt;
+</CodeBlock>
+
+| Paramètre | Description |
+|---|---|
+| `nom` | Identifiant de connexion |
+| `privilege` | Niveau de privilège (0–15 ; 15 = accès complet) |
+| `secret` | Mot de passe chiffré MD5 (recommandé vs `password`) |
+
+## Exemple minimal
+
+<CliPrompt mode="config" />
+
+<CodeBlock lang="cisco" title="Créer un compte administrateur">
+Router(config)# username admin privilege 15 secret Admin@2024
+</CodeBlock>
+
+## Étapes de configuration complètes
+
+**1. Créer le(s) compte(s) utilisateur(s)**
+
+<CliPrompt mode="config" />
+
+<CodeBlock lang="cisco">
+Router(config)# username admin privilege 15 secret Admin@2024
+Router(config)# username technicien privilege 5 secret Tech@2024
+</CodeBlock>
+
+**2. Activer `login local` sur la console**
+
+<CodeBlock lang="cisco">
+Router(config)# line console 0
+Router(config-line)# login local
+Router(config-line)# exit
+</CodeBlock>
+
+**3. Activer `login local` sur les lignes VTY (Telnet / SSH)**
+
+<CodeBlock lang="cisco">
+Router(config)# line vty 0 4
+Router(config-line)# login local
+Router(config-line)# transport input ssh
+Router(config-line)# exit
+</CodeBlock>
+
+**4. Vérification**
+
+<CliPrompt mode="privileged" />
+
+<CodeBlock lang="cisco">
+Router# show running-config | section username
+username admin privilege 15 secret 5 $1$mERr$hx5rVt7rPNoS4wqbXKX7m0
+username technicien privilege 5 secret 5 $1$abc$/xOh7...
+</CodeBlock>
+
+## Différence `login` vs `login local`
+
+| Commande | Comportement |
+|---|---|
+| `login` | Demande le mot de passe de ligne (`password <pass>`) |
+| `login local` | Demande username + password du compte local |
+| `no login` | Aucune authentification (accès direct) |
+
+## Niveaux de privilège courants
+
+| Niveau | Accès |
+|---|---|
+| 0 | Commandes minimales (`logout`, `enable`, `disable`) |
+| 1 | Mode user (default : `>`) |
+| 15 | Mode privileged complet (`#`) |
+
+<Callout type="tip" title="login local est requis pour SSH">
+  Sans `login local` sur les lignes VTY, SSH refusera la connexion même si les clés RSA sont générées. `login local` est obligatoire pour `transport input ssh`.
 </Callout>
+
+## Pièges fréquents
+
+<Callout type="danger" title="Ne jamais supprimer le seul compte avant d'en créer un autre">
+  Si tu supprimes ton seul compte `username` avec `no username admin` et que `login local` est actif, tu te retrouves à la porte de l'équipement. Toujours avoir au moins deux comptes ou revenir à `login` avant de supprimer.
+</Callout>
+
+<Callout type="warning" title="username … password vs username … secret">
+  `username admin password cisco` stocke le mot de passe en clair (ou type 7). Utilise toujours `secret` à la place pour obtenir un hash MD5 (type 5), nettement plus robuste.
+</Callout>
+
+## Voir aussi
+
+- [Configurer SSH](/commands/securite/configurer-ssh)
+- [Mot de passe VTY](/commands/securite/mot-de-passe-vty)
+- [Mot de passe console](/commands/securite/mot-de-passe-console)

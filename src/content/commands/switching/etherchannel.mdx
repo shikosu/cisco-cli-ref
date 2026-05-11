@@ -13,12 +13,114 @@ examTags: ["bts-sio", "but-rt"]
 updated: 2026-05-06
 ---
 
-import { Callout } from '@/components/ui';
+import { CliPrompt, CodeBlock, Callout, Topology } from '@/components/ui';
 
-## À venir
+## En bref
 
-Cette fiche est en cours de rédaction.
+EtherChannel regroupe plusieurs liens physiques (2, 4 ou 8) entre deux switches en **un seul lien logique**. Les avantages : toute la bande passante combinée est utilisée, et si un câble tombe, le trafic continue sur les liens restants sans reconfiguration.
 
-<Callout type="note" title="Contenu à venir">
-  La fiche sur EtherChannel (LACP) sera complétée prochainement. En attendant, consulte les autres fiches de la catégorie **switching**.
+## Topologie de référence
+
+<Topology>
+    [SW1] ──Fa0/1──┐
+                   ├── Po1 (Port-channel 1, lien logique)
+    [SW1] ──Fa0/2──┘
+    
+Vue logique :     [SW1] ══Po1 (200 Mbps)══ [SW2]
+Vue physique :    [SW1] ──Fa0/1 + Fa0/2── [SW2]
+</Topology>
+
+## Protocoles EtherChannel
+
+| Protocole | Mode | Description |
+|---|---|---|
+| **LACP** (802.3ad) | `active` | Négocie activement (recommandé) |
+| **LACP** (802.3ad) | `passive` | Répond si l'autre est active |
+| **PAgP** (Cisco) | `desirable` | Négocie (propriétaire Cisco) |
+| **PAgP** (Cisco) | `auto` | Répond si l'autre est desirable |
+| Statique | `on` | Pas de négociation (risqué) |
+
+**LACP `active`–`active` ou `active`–`passive`** est la combinaison recommandée.
+
+## Configuration sur SW1
+
+<CliPrompt mode="config-if" />
+
+<CodeBlock lang="cisco" title="EtherChannel LACP sur SW1 (Fa0/1 + Fa0/2)">
+SW1(config)# interface range FastEthernet0/1 - 2
+SW1(config-if-range)# switchport mode trunk
+SW1(config-if-range)# channel-group 1 mode active
+SW1(config-if-range)# exit
+</CodeBlock>
+
+## Configuration sur SW2
+
+<CodeBlock lang="cisco" title="EtherChannel LACP sur SW2">
+SW2(config)# interface range FastEthernet0/1 - 2
+SW2(config-if-range)# switchport mode trunk
+SW2(config-if-range)# channel-group 1 mode active
+SW2(config-if-range)# exit
+</CodeBlock>
+
+L'interface virtuelle `Port-channel 1` est créée automatiquement.
+
+## Configurer le Port-channel
+
+Les paramètres de trunk se configurent sur l'interface `Port-channel`, pas sur les interfaces physiques :
+
+<CliPrompt mode="config-if" />
+
+<CodeBlock lang="cisco" title="Configuration du lien logique">
+SW1(config)# interface port-channel 1
+SW1(config-if)# switchport mode trunk
+SW1(config-if)# switchport trunk allowed vlan 10,20,30
+SW1(config-if)# exit
+</CodeBlock>
+
+## Vérification
+
+<CliPrompt mode="privileged" />
+
+<CodeBlock lang="cisco" title="État de l'EtherChannel">
+SW1# show etherchannel summary
+Flags:  D - down        P - bundled in port-channel
+        I - stand-alone s - suspended
+        H - Hot-standby (LACP only)
+        ...
+Number of channel-groups in use: 1
+Number of aggregators:           1
+
+Group  Port-channel  Protocol    Ports
+------+-------------+-----------+------------------
+1      Po1(SU)       LACP        Fa0/1(P) Fa0/2(P)
+</CodeBlock>
+
+`SU` = Switch Utilisant (opérationnel). `P` = Port bundled (agrégé).
+
+<CodeBlock lang="cisco" title="Détails LACP">
+SW1# show lacp neighbor
+...
+SW1# show interfaces port-channel 1
+Port-channel1 is up, line protocol is up (connected)
+  Hardware is EtherChannel
+  BW 200000 Kbit/sec       ← 2 × 100 Mbps = 200 Mbps
+</CodeBlock>
+
+## Pièges fréquents
+
+<Callout type="danger" title="Toutes les interfaces doivent avoir la même config avant d'agréger">
+  Vitesse, duplex, mode (access/trunk), VLANs : tout doit être **identique** sur les deux interfaces. Une incohérence provoque un `suspended` sur le port-channel.
 </Callout>
+
+<Callout type="warning" title="Ne pas configurer les interfaces physiques individuellement après création">
+  Après la création du port-channel, configure **uniquement le port-channel**. Les modifications sur les interfaces physiques individuelles peuvent être ignorées ou créer des conflits.
+</Callout>
+
+<Callout type="tip" title="STP voit l'EtherChannel comme un seul lien">
+  Spanning Tree Protocol traite le port-channel comme une seule interface. Pas de port bloqué entre les deux switches — toute la bande passante est utilisée simultanément.
+</Callout>
+
+## Voir aussi
+
+- [Configurer un trunk (802.1Q)](/commands/switching/configurer-trunk)
+- [Spanning Tree Protocol (STP)](/commands/switching/spanning-tree)

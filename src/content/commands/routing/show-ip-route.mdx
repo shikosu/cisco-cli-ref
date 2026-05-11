@@ -14,12 +14,94 @@ examTags: ["bac-pro-ciel", "bts-sio", "but-rt"]
 updated: 2026-05-06
 ---
 
-import { Callout } from '@/components/ui';
+import { CliPrompt, CodeBlock, Callout, Topology } from '@/components/ui';
 
-## À venir
+## En bref
 
-Cette fiche est en cours de rédaction.
+`show ip route` affiche la **table de routage IP** du routeur : toutes les routes connues, leur origine (statique, dynamique, connectée) et le prochain saut. C'est la commande centrale pour comprendre où un routeur va envoyer un paquet.
 
-<Callout type="note" title="Contenu à venir">
-  La fiche sur `show ip route` sera complétée prochainement. En attendant, consulte les autres fiches de la catégorie **routing**.
+## Syntaxe
+
+<CodeBlock lang="cisco">
+show ip route
+show ip route &lt;adresse-réseau&gt;
+</CodeBlock>
+
+Avec une adresse en paramètre, seule la route correspondante s'affiche (pratique sur une grande table).
+
+## Exemple de sortie complète
+
+<CliPrompt mode="privileged" />
+
+<CodeBlock lang="cisco" title="Table de routage d'un routeur R1">
+Router# show ip route
+Codes: C - connected, S - static, R - RIP, O - OSPF,
+       * - candidate default, ...
+
+Gateway of last resort is 10.0.0.2 to network 0.0.0.0
+
+C    192.168.1.0/24 is directly connected, GigabitEthernet0/0
+C    10.0.0.0/30 is directly connected, GigabitEthernet0/1
+S    192.168.2.0/24 [1/0] via 10.0.0.2
+S    192.168.3.0/24 [1/0] via 10.0.0.2
+O    172.16.0.0/24 [110/2] via 10.0.0.2, 00:05:12, GigabitEthernet0/1
+S*   0.0.0.0/0 [1/0] via 10.0.0.2
+</CodeBlock>
+
+## Déchiffrer les codes
+
+| Code | Signification |
+|---|---|
+| `C` | Connected — réseau directement connecté |
+| `S` | Static — route statique configurée manuellement |
+| `S*` | Route par défaut (default route) |
+| `R` | RIP — apprise via RIPv1/v2 |
+| `O` | OSPF — apprise via OSPF |
+| `D` | EIGRP |
+
+## Lire une ligne de route
+
+<CodeBlock lang="cisco">
+S    192.168.2.0/24 [1/0] via 10.0.0.2
+│    │              │  │       │
+│    │              │  │       └── Prochain saut (next-hop)
+│    │              │  └────────── Métrique
+│    │              └───────────── Distance administrative
+│    └──────────────────────────── Réseau de destination
+└───────────────────────────────── Type de route (S = statique)
+</CodeBlock>
+
+**Distance administrative / Métrique :** `[1/0]` = distance administrative 1 (statique), métrique 0. Plus la distance est basse, plus la route est préférée.
+
+| Source | Distance administrative |
+|---|---|
+| Connected | 0 |
+| Static | 1 |
+| OSPF | 110 |
+| RIP | 120 |
+
+## Vérifier une route précise
+
+<CodeBlock lang="cisco">
+Router# show ip route 192.168.3.0
+Routing entry for 192.168.3.0/24
+  Known via "static", distance 1, metric 0
+  Routing Descriptor Blocks:
+  * 10.0.0.2, via GigabitEthernet0/1
+</CodeBlock>
+
+## Pièges fréquents
+
+<Callout type="warning" title="Table vide = interface down ou route manquante">
+  Si un réseau n'apparaît pas dans `show ip route`, soit l'interface qui y mène est `down`, soit la route statique n'est pas configurée. Vérifie avec `show ip interface brief`.
 </Callout>
+
+<Callout type="tip" title="Gateway of last resort">
+  La ligne `Gateway of last resort is X to network 0.0.0.0` indique la route par défaut active. Si elle affiche `not set`, les paquets vers des destinations inconnues seront abandonnés.
+</Callout>
+
+## Voir aussi
+
+- [Route statique](/commands/routing/route-statique)
+- [Route par défaut](/commands/routing/route-par-defaut)
+- [show ip interface brief](/commands/diagnostic/show-ip-interface-brief)
