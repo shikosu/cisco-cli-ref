@@ -1,11 +1,9 @@
 services:
   cisco-cli-ref:
-    image: nginx:alpine
+    build: .
     container_name: cisco-cli-ref
     restart: unless-stopped
     ports:
       - "8096:80"
-    volumes:
-      - ./html:/usr/share/nginx/html:ro
     labels:
       icon: https://nginx.org/nginx.png
