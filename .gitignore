@@ -1,5 +1,5 @@
-# build output
-dist/
+# build output (dist/ committé pour déploiement NAS ARM)
+# dist/
 # generated types
 .astro/
 # index Pagefind généré (copié depuis dist/ après npm run build)
