@@ -15,7 +15,7 @@ const pubPf   = resolve(root, 'public/pagefind');
 
 console.log('[postbuild] Génération de l\'index Pagefind…');
 try {
-  execSync('npx pagefind --site dist', { stdio: 'inherit' });
+  execSync('./node_modules/.bin/pagefind --site dist', { stdio: 'inherit' });
   console.log('[postbuild] Index Pagefind généré avec succès.');
 } catch (err) {
   console.error('[postbuild] Erreur Pagefind :', err.message);
