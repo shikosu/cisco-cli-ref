@@ -63,7 +63,7 @@ VLAN Name                             Status    Ports
 
 ## Diagnostiquer un problème d'accès VLAN
 
-<Topology>
+<Topology>{`
 Scénario : PC sur Fa0/6 ne communique pas → VLAN 10 ?
 
 Switch# show vlan brief
@@ -73,7 +73,7 @@ VLAN  Name        Status   Ports
 
 Problème : le port n'a pas été assigné au bon VLAN.
 Solution : switchport access vlan 10 sur Fa0/6
-</Topology>
+`}</Topology>
 
 ## Pièges fréquents
 

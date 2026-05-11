@@ -22,15 +22,15 @@ Un routeur Cisco peut jouer le rôle de **serveur DHCP** pour distribuer automat
 
 ## Topologie de référence
 
-<Topology>
+<Topology>{`
     [PC1]──┐
     [PC2]──┤──[Switch]──[Router R1]──Internet
-    [PC3]──┘   
-    
+    [PC3]──┘
+
 R1 : interface Gi0/0 : 192.168.1.1/24 (LAN)
      Pool DHCP : 192.168.1.10 → .254
      Exclure : .1 à .9 (adresses réservées)
-</Topology>
+`}</Topology>
 
 ## Syntaxe clé
 

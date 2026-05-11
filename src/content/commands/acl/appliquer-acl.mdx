@@ -34,7 +34,7 @@ ip access-group &lt;numéro-ou-nom-acl&gt; &#123;in | out&#125;
 
 ## Comprendre in vs out
 
-<Topology>
+<Topology>{`
 Point de vue du ROUTEUR (pas du réseau) :
 
 [PC réseau A] ──→ [Gi0/0 IN → Routeur → Gi0/1 OUT] ──→ [Serveur réseau B]
@@ -42,7 +42,7 @@ Point de vue du ROUTEUR (pas du réseau) :
 - ACL in sur Gi0/0 : filtre le trafic venant du réseau A
 - ACL out sur Gi0/1 : filtre le trafic allant vers le réseau B
 - Les deux bloquent les mêmes paquets, mais à des moments différents
-</Topology>
+`}</Topology>
 
 ## Exemple complet
 

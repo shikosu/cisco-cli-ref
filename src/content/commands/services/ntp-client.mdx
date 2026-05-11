@@ -86,7 +86,7 @@ Le `*` devant une adresse indique le serveur NTP actuellement utilisé.
 
 ## Topologie TP typique
 
-<Topology>
+<Topology>{`
 Réseau TP :
   [PC] ─── [Switch] ─── [Router R1] ─── Internet ─── [Serveur NTP]
                               │
@@ -96,7 +96,7 @@ Si pas d'accès Internet en TP :
   [Router R1] ─── [Router R2 (NTP master)]
   R2(config)# ntp master 3   ← R2 joue le rôle de serveur NTP
   R1(config)# ntp server 192.168.1.254
-</Topology>
+`}</Topology>
 
 ## NTP Master (serveur NTP interne pour TP)
 

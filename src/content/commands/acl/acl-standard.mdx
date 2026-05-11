@@ -49,11 +49,11 @@ Le wildcard est l'**inverse** du masque réseau. Un `0` signifie "ce bit doit co
 
 ## Exemple — Bloquer un sous-réseau
 
-<Topology>
+<Topology>{`
 Objectif : interdire 192.168.2.0/24 d'accéder à 192.168.1.0/24
-Appliquer sur R1, interface Gi0/0 (côté LAN1) en entrée... 
+Appliquer sur R1, interface Gi0/0 (côté LAN1) en entrée...
 Ou plus simple : interface Gi0/1 (côté LAN2) en sortie.
-</Topology>
+`}</Topology>
 
 <CliPrompt mode="config" />
 

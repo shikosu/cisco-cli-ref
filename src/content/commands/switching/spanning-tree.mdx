@@ -22,18 +22,18 @@ STP (Spanning Tree Protocol) empêche les **boucles de couche 2** dans un résea
 
 ## Comment STP fonctionne
 
-<Topology>
+<Topology>{`
 3 switches avec liens redondants :
 
     [SW1] ──── [SW2]
-      │    \      │
-      │     \     │
-    [SW3] ──── ──[SW3]
+      │    \\      │
+      │     \\     │
+    [SW3] ─────[SW3]
 
 STP élit SW1 comme Root Bridge (priorité la plus basse).
 SW2 et SW3 bloquent les ports redondants (état BLK).
 En cas de panne d'un lien, STP recalcule automatiquement.
-</Topology>
+`}</Topology>
 
 **États des ports STP :**
 

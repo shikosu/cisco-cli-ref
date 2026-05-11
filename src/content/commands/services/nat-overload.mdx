@@ -22,7 +22,7 @@ Le NAT Overload (ou PAT — Port Address Translation) permet à **tous les hôte
 
 ## Topologie de référence
 
-<Topology>
+<Topology>{`
 [PC1 192.168.1.10]──┐
 [PC2 192.168.1.11]──┤──[Gi0/0]──[R1 NAT]──[Gi0/1]──Internet
 [PC3 192.168.1.12]──┘    inside            outside
@@ -31,7 +31,7 @@ Le NAT Overload (ou PAT — Port Address Translation) permet à **tous les hôte
 PC1 → Internet : 192.168.1.10:12345 → 203.0.113.1:12345
 PC2 → Internet : 192.168.1.11:54321 → 203.0.113.1:54321
 Le routeur mémorise la correspondance port ↔ hôte privé.
-</Topology>
+`}</Topology>
 
 ## Configuration étape par étape
 

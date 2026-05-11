@@ -22,14 +22,14 @@ RIPv2 (Routing Information Protocol version 2) est un protocole de routage dynam
 
 ## Topologie de référence
 
-<Topology>
+<Topology>{`
 [LAN1]──[R1]──10.0.0.0/30──[R2]──[LAN2]
 192.168.1.0/24              192.168.2.0/24
 
 R1 et R2 configurés avec RIPv2 :
 → R1 apprend 192.168.2.0/24 via R2
 → R2 apprend 192.168.1.0/24 via R1
-</Topology>
+`}</Topology>
 
 ## Syntaxe
 

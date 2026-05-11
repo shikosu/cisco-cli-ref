@@ -46,13 +46,13 @@ Router(dhcp-config)# exit
 
 ## Plusieurs pools (multi-VLAN)
 
-<Topology>
+<Topology>{`
 R1 assure le DHCP pour 3 VLANs :
 
 VLAN 10 : 192.168.10.0/24 → pool VLAN10
 VLAN 20 : 192.168.20.0/24 → pool VLAN20
 VLAN 30 : 192.168.30.0/24 → pool VLAN30
-</Topology>
+`}</Topology>
 
 <CodeBlock lang="cisco" title="3 pools pour 3 VLANs">
 Router(config)# ip dhcp excluded-address 192.168.10.1 192.168.10.9
@@ -82,14 +82,14 @@ Router(dhcp-config)# exit
 
 Si le serveur DHCP est sur un routeur **différent** du segment client, utilise `ip helper-address` pour relayer les broadcasts DHCP à travers le réseau :
 
-<Topology>
+<Topology>{`
 [PC VLAN10] → [Switch] → [R_Local Gi0/0.10]
                                  │
                             ip helper-address 10.0.0.2
                                  │
                           [R_DHCP 10.0.0.2]
                           (serveur DHCP centralisé)
-</Topology>
+`}</Topology>
 
 <CliPrompt mode="config-if" />
 
@@ -115,9 +115,8 @@ R_Local(config-if)# ip helper-address 10.0.0.2
 
 <Callout type="tip" title="Vider les baux pour tester">
   Après avoir modifié un pool, efface les baux existants pour que les clients reçoivent la nouvelle configuration :
-  ```
-  Router# clear ip dhcp binding *
-  ```
+
+  <CodeBlock lang="cisco">Router# clear ip dhcp binding *</CodeBlock>
 </Callout>
 
 ## Voir aussi
