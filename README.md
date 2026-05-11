@@ -39,7 +39,7 @@ Référence des commandes CLI Cisco IOS destinée aux étudiants **Bac Pro CIEL*
 ### Installation
 
 ```bash
-git clone https://github.com/teovidal/cisco-cli-ref.git
+git clone https://github.com/shikosu/cisco-cli-ref.git
 cd cisco-cli-ref
 npm install
 ```
